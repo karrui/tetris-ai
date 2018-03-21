@@ -109,8 +109,8 @@ class StateCopy {
         this.turn = toCopy.getTurnNumber();
         this.cleared = toCopy.getRowsCleared();
 
-        this.field = ArrayHelper.deepCopy2dIntArray(toCopy.getField());
-        this.top = ArrayHelper.deepCopyIntArray(toCopy.getTop());
+        this.field = ArrayHelper.deepCopy(toCopy.getField());
+        this.top = ArrayHelper.deepCopy(toCopy.getTop());
 
         this.nextPiece = toCopy.getNextPiece();
 
@@ -276,8 +276,8 @@ class StateCopy {
 }
 
 class ArrayHelper {
-    // Helper method to clone 2d array instead of reference
-    static int[][] deepCopy2dIntArray(int[][] src) {
+    // Helper method to clone 2d int array instead of reference
+    static int[][] deepCopy(int[][] src) {
         int length = src.length;
         int[][] dest = new int[length][src[0].length];
         for (int i = 0; i < length; i++) {
@@ -286,8 +286,8 @@ class ArrayHelper {
         return dest;
     }
 
-    // Helper method to clone 1d array instead of reference
-    static int[] deepCopyIntArray(int[] src) {
+    // Overloaded helper method to clone 1d int array instead of reference
+    static int[] deepCopy(int[] src) {
         return src.clone();
     }
 }
