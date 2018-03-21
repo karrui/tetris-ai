@@ -94,12 +94,12 @@ public class PlayerSkeleton {
 class StateCopy {
 
 
-    public static final int COLS = 10;
-    public static final int ROWS = 21;
-    public static final int N_PIECES = 7;
+    private static final int COLS = 10;
+    private static final int ROWS = 21;
+    private static final int N_PIECES = 7;
 
 
-    public boolean lost;
+    private boolean lost;
 
     //current turn
     private int turn;
@@ -116,22 +116,22 @@ class StateCopy {
 
 
     //number of next piece
-    protected int nextPiece;
+    private int nextPiece;
 
 
     //all legal moves - first index is piece type - then a list of 2-length arrays
-    protected static int[][][] legalMoves = new int[N_PIECES][][];
+    private static int[][][] legalMoves = new int[N_PIECES][][];
 
     //indices for legalMoves
-    public static final int ORIENT = 0;
-    public static final int SLOT = 1;
+    private static final int ORIENT = 0;
+    private static final int SLOT = 1;
 
     //possible orientations for a given piece type
-    protected static int[] pOrients;
+    private static int[] pOrients;
 
     //the next several arrays define the piece vocabulary in detail
     //width of the pieces [piece ID][orientation]
-    protected static int[][] pWidth;
+    private static int[][] pWidth;
 
     //height of the pieces [piece ID][orientation]
     private static int[][] pHeight;
