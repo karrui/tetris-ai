@@ -1,26 +1,71 @@
 public class PlayerSkeleton {
 
+    private static int HEIGHT_HEURISTIC_INDEX = 0;
+    private static int ROWS_CLEARED_HEURISTIC_INDEX = 1;
+    private static int AVG_HEIGHT_INCREASE_HEURISTIC_INDEX = 2;
+
+    // these are the important weights for the machine to train
+    // remember weights should be negative if we are minimizing and positive if maximizing
+    private double[] weights = {-1, 1, -1};
+
+
     //implement this function to have a working system
-    public int pickMove(State s, int[][] legalMoves) {
-        // TODO: no weight yet, need to implement weighting
-        return evaluateHeightHeuristic(s, legalMoves);
-    }
-
-    public int evaluateHeightHeuristic(State s, int[][] legalMoves) {
+    private int pickMove(State s, int[][] legalMoves) {
         int bestMove = 0;
+        double maxUtility = Integer.MIN_VALUE;
 
-        int minimumHeight = Integer.MAX_VALUE;
         for (int i = 0; i < legalMoves.length; i++) {
             StateCopy sCopy = new StateCopy(s);
             sCopy.makeMove(i);
-            int maxHeightOfCopy = getMaxHeight(sCopy);
-            if (minimumHeight > maxHeightOfCopy) {
-                minimumHeight = maxHeightOfCopy;
+            double utility = getUtility(sCopy);
+            if (maxUtility < utility) {
+                maxUtility = utility;
                 bestMove = i;
             }
         }
-
         return bestMove;
+    }
+
+
+    private double getUtility(StateCopy s) {
+        // TODO: Probably have to make a heuristic class so this does not get messy? Someone try?
+        return weights[HEIGHT_HEURISTIC_INDEX] * evaluateMaxHeightHeuristic(s)
+                + weights[ROWS_CLEARED_HEURISTIC_INDEX] * evaluateRowsClearedHeuristic(s)
+                + weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX] * evaluateAverageHeightIncreaseHeuristic(s);
+    }
+
+    private int evaluateMaxHeightHeuristic(StateCopy s) {
+        return getMaxHeight(s);
+    }
+
+    private int getMaxHeight(StateCopy s) {
+        int[] top = s.getTop();
+        int maxHeight = 0;
+
+        for (int height : top) {
+            if (maxHeight < height) {
+                maxHeight = height;
+            }
+        }
+        return maxHeight;
+    }
+
+    private int evaluateRowsClearedHeuristic(StateCopy s) {
+        return s.getRowsCleared();
+    }
+
+    private double evaluateAverageHeightIncreaseHeuristic(StateCopy s) {
+        int[] prevTop = s.getPreviousTop();
+        int[] top = s.getTop();
+
+        int length = top.length;
+        double heightIncrease = 0;
+
+        for(int i = 0; i < length; i++) {
+            heightIncrease += top[i] - prevTop[i];
+        }
+
+        return heightIncrease / length;
     }
 
     public static void main(String[] args) {
@@ -38,18 +83,6 @@ public class PlayerSkeleton {
             }
         }
         System.out.println("You have completed " + s.getRowsCleared() + " rows.");
-    }
-
-    public int getMaxHeight(StateCopy s) {
-        int[] top = s.getTop();
-        int maxHeight = 0;
-
-        for (int height : top) {
-            if (maxHeight < height) {
-                maxHeight = height;
-            }
-        }
-        return maxHeight;
     }
 }
 
@@ -77,6 +110,9 @@ class StateCopy {
     //top row+1 of each column
     //0 means empty
     private int[] top;
+
+    // the previous top[] to calculate average height increase
+    private int[] previousTop;
 
 
     //number of next piece
@@ -111,6 +147,7 @@ class StateCopy {
 
         this.field = ArrayHelper.deepCopy(toCopy.getField());
         this.top = ArrayHelper.deepCopy(toCopy.getTop());
+        this.previousTop = ArrayHelper.deepCopy(toCopy.getTop());   // nothing will change this once its init
 
         this.nextPiece = toCopy.getNextPiece();
 
@@ -156,6 +193,10 @@ class StateCopy {
 
     public int[] getTop() {
         return top;
+    }
+
+    public int[] getPreviousTop() {
+        return previousTop;
     }
 
     public static int[] getpOrients() {
