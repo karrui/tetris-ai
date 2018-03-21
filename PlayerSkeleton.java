@@ -103,7 +103,10 @@ class StateCopy {
 
     //current turn
     private int turn;
-    private int cleared;
+    private int cleared;    // this variable actually keeps track of all the rows cleared so far in game
+
+    // this variable does not exist in State, this is for the maximize rows cleared heuristic
+    private int rowsCleared = 0;
 
     //each square in the grid - int means empty - other values mean the turn it was placed
     private int[][] field;
@@ -228,8 +231,13 @@ class StateCopy {
         return lost;
     }
 
-    public int getRowsCleared() {
+    // Renamed to this from State to better explain what this is
+    public int getTotalRowsCleared() {
         return cleared;
+    }
+
+    public int getRowsCleared() {
+        return rowsCleared;
     }
 
     public int getTurnNumber() {
@@ -281,8 +289,6 @@ class StateCopy {
         for(int c = 0; c < pWidth[nextPiece][orient]; c++) {
             top[slot+c]=height+pTop[nextPiece][orient][c];
         }
-
-        int rowsCleared = 0;
 
         //check for full rows - starting at the top
         for(int r = height+pHeight[nextPiece][orient]-1; r >= height; r--) {
