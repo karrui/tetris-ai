@@ -7,10 +7,14 @@ public class PlayerSkeleton {
 
     private ArrayList<Heuristic> heuristics = new ArrayList<>();
 
+    // update these weights, negative for minimize, positive for maximize.
+    // Probably doesn't matter since machine will slowly move it to the correct value
+    private double[] weights = {-0.5, 1, -0.5};
+
+
     PlayerSkeleton() {
         // update these weights, negative for minimize, positive for maximize.
         // Probably doesn't matter since machine will slowly move it to the correct value
-        double[] weights = {-0.5, 1, -0.5};
         heuristics.add(new AvgHeightHeuristic(weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX]));
         heuristics.add(new MaxHeightHeuristic(weights[HEIGHT_HEURISTIC_INDEX]));
         heuristics.add(new RowsClearedHeuristic(weights[ROWS_CLEARED_HEURISTIC_INDEX]));
@@ -36,12 +40,14 @@ public class PlayerSkeleton {
 
 
     private double valueFunction(StateCopy s) {
-        double utility = 0;
+        double value = 0;
+        int i = 0;
         for (Heuristic heuristic: heuristics) {
-            utility += (heuristic.run(s));
+            value += (weights[i] * heuristic.run(s));
+            i++;
         }
 
-        return utility;
+        return value;
     }
 
     // This is the real main(), so you can run non-static;
