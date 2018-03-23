@@ -25,9 +25,9 @@ public class PlayerSkeleton {
         for (int i = 0; i < legalMoves.length; i++) {
             StateCopy sCopy = new StateCopy(s);
             sCopy.makeMove(i);
-            double utility = getUtility(sCopy);
-            if (maxUtility < utility) {
-                maxUtility = utility;
+            double currUtility = sCopy.getRowsCleared() + valueFunction(sCopy);
+            if (maxUtility < currUtility) {
+                maxUtility = currUtility;
                 bestMove = i;
             }
         }
@@ -35,9 +35,8 @@ public class PlayerSkeleton {
     }
 
 
-    private double getUtility(StateCopy s) {
+    private double valueFunction(StateCopy s) {
         double utility = 0;
-        // TODO: Probably have to make a heuristic class so this does not get messy? Someone try?
         for (Heuristic heuristic: heuristics) {
             utility += (heuristic.run(s));
         }
