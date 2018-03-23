@@ -64,9 +64,8 @@ public class TrainPlayerSkeleton {
                  */
                 int j = 0;
                 for (Heuristic heuristic: heuristics) {
-                    weights[j] += (0.0001 * (aftMove.getRowsCleared() + 1 * valueFunction(aftMove) - valueFunction(befMove))
+                    weights[j] += (0.0001 * (aftMove.getRowsCleared() + 1.0 * valueFunction(aftMove) - valueFunction(befMove))
                             * heuristic.run(befMove));
-                    System.out.println("weights[" + j + "] is " + weights[j] + " i is: " + i);
                     j++;
                 }
                 try {
@@ -77,6 +76,7 @@ public class TrainPlayerSkeleton {
             }
             System.out.println("You have completed " + s.getRowsCleared() + " rows.");
         }
+        System.out.println(weights[0] + " " + weights[1] + " " + weights[2]);
     }
 
 
