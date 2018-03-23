@@ -1,355 +1,72 @@
-public class TrainPlayerSkeleton {
+import java.util.ArrayList;
 
+public class TrainPlayerSkeleton {
     private static int HEIGHT_HEURISTIC_INDEX = 0;
     private static int ROWS_CLEARED_HEURISTIC_INDEX = 1;
     private static int AVG_HEIGHT_INCREASE_HEURISTIC_INDEX = 2;
 
-    // these are the important weights for the machine to train
-    // remember weights should be negative if we are minimizing and positive if maximizing
-    private static double[] weights = {0, 0, 0};
+    private ArrayList<Heuristic> heuristics = new ArrayList<>();
 
-    /**
-     * We adopt a greedy strategy for picking the best move- given a state and a set of legal moves,
-     * we choose the move that will maximize the sum of reward (# of rows cleared) and value function.
-     * @param s
-     * @param legalMoves
-     * @return bestMove
-     */
+    TrainPlayerSkeleton() {
+        // Machine will learn and update these weights via TD algorithm, negative for minimize, positive for maximize.
+        // Weights are arbitrarily initialised to 0.0.
+        double[] weights = {0.0, 0.0, 0.0};
+        heuristics.add(new AvgHeightHeuristic(weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX]));
+        heuristics.add(new MaxHeightHeuristic(weights[HEIGHT_HEURISTIC_INDEX]));
+        heuristics.add(new RowsClearedHeuristic(weights[ROWS_CLEARED_HEURISTIC_INDEX]));
+    }
+
+
+    //implement this function to have a working system
     private int pickMove(State s, int[][] legalMoves) {
         int bestMove = 0;
-        double maxUtiliy = Integer.MIN_VALUE;
+        double maxUtility = Integer.MIN_VALUE;
 
         for (int i = 0; i < legalMoves.length; i++) {
-            TrainStateCopy sCopy = new TrainStateCopy(s);
+            StateCopy sCopy = new StateCopy(s);
             sCopy.makeMove(i);
+
             double currUtility = sCopy.getRowsCleared() + valueFunction(sCopy);
-            if (maxUtiliy < currUtility) {
-                maxUtiliy = currUtility;
+            if (maxUtility < currUtility) {
+                maxUtility = currUtility;
                 bestMove = i;
             }
         }
         return bestMove;
     }
 
-    /**
-     * Note that TrainStateCopy s should be of the state after we have implemented that legal move
-     * @param s
-     * @return valueFunction calculated
-     */
-    private double valueFunction(TrainStateCopy s) {
-        // TODO: Probably have to make a heuristic class so this does not get messy? Someone try?
-        return weights[HEIGHT_HEURISTIC_INDEX] * evaluateMaxHeightHeuristic(s)
-                + weights[ROWS_CLEARED_HEURISTIC_INDEX] * evaluateRowsClearedHeuristic(s)
-                + weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX] * evaluateAverageHeightIncreaseHeuristic(s);
-    }
 
-    private int evaluateMaxHeightHeuristic(TrainStateCopy s) {
-        return getMaxHeight(s);
-    }
-
-    private int getMaxHeight(TrainStateCopy s) {
-        int[] top = s.getTop();
-        int maxHeight = 0;
-
-        for (int height : top) {
-            if (maxHeight < height) {
-                maxHeight = height;
-            }
-        }
-        return maxHeight;
-    }
-
-    private int evaluateRowsClearedHeuristic(TrainStateCopy s) {
-        return s.getRowsCleared();
-    }
-
-    private double evaluateAverageHeightIncreaseHeuristic(TrainStateCopy s) {
-        int[] prevTop = s.getPreviousTop();
-        int[] top = s.getTop();
-
-        int length = top.length;
-        double heightIncrease = 0;
-
-        for(int i = 0; i < length; i++) {
-            heightIncrease += top[i] - prevTop[i];
+    private double valueFunction(StateCopy s) {
+        double utility = 0;
+        for (Heuristic heuristic: heuristics) {
+            utility += (heuristic.run(s));
         }
 
-        return heightIncrease / length;
+        return utility;
     }
 
-    public static void main(String[] args) {
+    // This is the real main(), so you can run non-static;
+    private void execute() {
         State s = new State();
         new TFrame(s);
         TrainPlayerSkeleton p = new TrainPlayerSkeleton();
-        for (int i = 0; i < 100; i ++) {
-            while (!s.hasLost()) {
-                double currValueFunction = valueFunction(s);
-                StateCopy befMove = new StateCopy(s);
-                // choose action
-                s.makeMove(p.pickMove(s, s.legalMoves()));
-                // update weights
-                weights[0] += 0.0001 * [s.getRowsCleared() + 1 * valueFunction(s) - currValueFunction] * evaluateMaxHeightHeuristic(s);
-                // then we repeat for the other remaining weights
-                try {
-                    Thread.sleep(300);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            System.out.println("You have completed " + s.getRowsCleared() + " rows.");
-        }
-    }
-}
-
-
-/**
- * Deep copy of State class to apply moves without touching the real {@link State} class
- */
-class TrainStateCopy {
-
-
-    private static final int COLS = 10;
-    private static final int ROWS = 21;
-    private static final int N_PIECES = 7;
-
-
-    private boolean lost;
-
-    //current turn
-    private int turn;
-    private int cleared;    // this variable actually keeps track of all the rows cleared so far in game
-
-    // this variable does not exist in State, this is for the maximize rows cleared heuristic
-    private int rowsCleared = 0;
-
-    //each square in the grid - int means empty - other values mean the turn it was placed
-    private int[][] field;
-    //top row+1 of each column
-    //0 means empty
-    private int[] top;
-
-    // the previous top[] to calculate average height increase
-    private int[] previousTop;
-
-
-    //number of next piece
-    private int nextPiece;
-
-
-    //all legal moves - first index is piece type - then a list of 2-length arrays
-    private static int[][][] legalMoves = new int[N_PIECES][][];
-
-    //indices for legalMoves
-    private static final int ORIENT = 0;
-    private static final int SLOT = 1;
-
-    //possible orientations for a given piece type
-    private static int[] pOrients;
-
-    //the next several arrays define the piece vocabulary in detail
-    //width of the pieces [piece ID][orientation]
-    private static int[][] pWidth;
-
-    //height of the pieces [piece ID][orientation]
-    private static int[][] pHeight;
-
-    private static int[][][] pBottom;
-    private static int[][][] pTop;
-
-
-    TrainStateCopy(State toCopy) {
-        this.lost = toCopy.hasLost();
-        this.turn = toCopy.getTurnNumber();
-        this.cleared = toCopy.getRowsCleared();
-
-        this.field = TrainArrayHelper.deepCopy(toCopy.getField());
-        this.top = TrainArrayHelper.deepCopy(toCopy.getTop());
-        this.previousTop = TrainArrayHelper.deepCopy(toCopy.getTop());   // nothing will change this once its init
-
-        this.nextPiece = toCopy.getNextPiece();
-
-        pOrients = State.getpOrients();
-        pWidth = State.getpWidth();
-        pHeight = State.getpHeight();
-        pBottom = State.getpBottom();
-        pTop = State.getpTop();
-
-        initLegalMoves();
-
-    }
-
-    //initialize legalMoves
-    private void initLegalMoves() {
-        //for each piece type
-        for(int i = 0; i < N_PIECES; i++) {
-            //figure number of legal moves
-            int n = 0;
-            for(int j = 0; j < pOrients[i]; j++) {
-                //number of locations in this orientation
-                n += COLS+1-pWidth[i][j];
-            }
-            //allocate space
-            legalMoves[i] = new int[n][2];
-            //for each orientation
-            n = 0;
-            for(int j = 0; j < pOrients[i]; j++) {
-                //for each slot
-                for(int k = 0; k < COLS+1-pWidth[i][j];k++) {
-                    legalMoves[i][n][ORIENT] = j;
-                    legalMoves[i][n][SLOT] = k;
-                    n++;
-                }
+        while (!s.hasLost()) {
+            s.makeMove(p.pickMove(s, s.legalMoves()));
+            s.draw();
+            s.drawNext(0, 0);
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
-
-    }
-
-    public int[][] getField() {
-        return field;
-    }
-
-    public int[] getTop() {
-        return top;
-    }
-
-    public int[] getPreviousTop() {
-        return previousTop;
-    }
-
-    public static int[] getpOrients() {
-        return pOrients;
-    }
-
-    public static int[][] getpWidth() {
-        return pWidth;
-    }
-
-    public static int[][] getpHeight() {
-        return pHeight;
-    }
-
-    public static int[][][] getpBottom() {
-        return pBottom;
-    }
-
-    public static int[][][] getpTop() {
-        return pTop;
+        System.out.println("You have completed " + s.getRowsCleared() + " rows.");
     }
 
 
-    public int getNextPiece() {
-        return nextPiece;
+    public static void main(String[] args) {
+        TrainPlayerSkeleton ps = new TrainPlayerSkeleton();
+        ps.execute();
     }
 
-    public boolean hasLost() {
-        return lost;
-    }
-
-    // Renamed to this from State to better explain what this is
-    public int getTotalRowsCleared() {
-        return cleared;
-    }
-
-    public int getRowsCleared() {
-        return rowsCleared;
-    }
-
-    public int getTurnNumber() {
-        return turn;
-    }
-
-    //gives legal moves for
-    public int[][] legalMoves() {
-        return legalMoves[nextPiece];
-    }
-
-    //make a move based on the move index - its order in the legalMoves list
-    public void makeMove(int move) {
-        makeMove(legalMoves[nextPiece][move]);
-    }
-
-    //make a move based on an array of orient and slot
-    public void makeMove(int[] move) {
-        makeMove(move[ORIENT],move[SLOT]);
-    }
-
-    //returns false if you lose - true otherwise
-    public boolean makeMove(int orient, int slot) {
-        turn++;
-        //height if the first column makes contact
-        int height = top[slot]-pBottom[nextPiece][orient][0];
-        //for each column beyond the first in the piece
-        for(int c = 1; c < pWidth[nextPiece][orient];c++) {
-            height = Math.max(height,top[slot+c]-pBottom[nextPiece][orient][c]);
-        }
-
-        //check if game ended
-        if(height+pHeight[nextPiece][orient] >= ROWS) {
-            lost = true;
-            return false;
-        }
-
-
-        //for each column in the piece - fill in the appropriate blocks
-        for(int i = 0; i < pWidth[nextPiece][orient]; i++) {
-
-            //from bottom to top of brick
-            for(int h = height+pBottom[nextPiece][orient][i]; h < height+pTop[nextPiece][orient][i]; h++) {
-                field[h][i+slot] = turn;
-            }
-        }
-
-        //adjust top
-        for(int c = 0; c < pWidth[nextPiece][orient]; c++) {
-            top[slot+c]=height+pTop[nextPiece][orient][c];
-        }
-
-        //check for full rows - starting at the top
-        for(int r = height+pHeight[nextPiece][orient]-1; r >= height; r--) {
-            //check all columns in the row
-            boolean full = true;
-            for (int c = 0; c < COLS; c++) {
-                if (field[r][c] == 0) {
-                    full = false;
-                    break;
-                }
-            }
-            //if the row was full - remove it and slide above stuff down
-            if (full) {
-                rowsCleared++;
-                cleared++;
-                //for each column
-                for (int c = 0; c < COLS; c++) {
-
-                    //slide down all bricks
-                    for (int i = r; i < top[c]; i++) {
-                        field[i][c] = field[i + 1][c];
-                    }
-                    //lower the top
-                    top[c]--;
-                    while (top[c] >= 1 && field[top[c] - 1][c] == 0) top[c]--;
-                }
-            }
-        }
-        return true;
-    }
-
-}
-
-@SuppressWarnings("Duplicates")
-class TrainArrayHelper {
-    // Helper method to clone 2d int array instead of reference
-    static int[][] deepCopy(int[][] src) {
-        int length = src.length;
-        int[][] dest = new int[length][src[0].length];
-        for (int i = 0; i < length; i++) {
-            System.arraycopy(src[i], 0, dest[i], 0, src[i].length);
-        }
-        return dest;
-    }
-
-    // Overloaded helper method to clone 1d int array instead of reference
-    static int[] deepCopy(int[] src) {
-        return src.clone();
-    }
 }
