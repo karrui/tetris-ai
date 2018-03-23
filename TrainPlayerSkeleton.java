@@ -7,10 +7,11 @@ public class TrainPlayerSkeleton {
 
     private ArrayList<Heuristic> heuristics = new ArrayList<>();
 
+    // Machine will learn and update these weights via TD algorithm.
+    // Weights are arbitrarily initialised to 0.0, negative for minimize, positive for maximize.
+    private double[] weights = {0.0000001, 0.0000001, 0.0000001};
+
     TrainPlayerSkeleton() {
-        // Machine will learn and update these weights via TD algorithm, negative for minimize, positive for maximize.
-        // Weights are arbitrarily initialised to 0.0.
-        double[] weights = {0.0, 0.0, 0.0};
         heuristics.add(new AvgHeightHeuristic(weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX]));
         heuristics.add(new MaxHeightHeuristic(weights[HEIGHT_HEURISTIC_INDEX]));
         heuristics.add(new RowsClearedHeuristic(weights[ROWS_CLEARED_HEURISTIC_INDEX]));
@@ -38,6 +39,7 @@ public class TrainPlayerSkeleton {
 
     private double valueFunction(StateCopy s) {
         double utility = 0;
+        int i = 0; // for weights array
         for (Heuristic heuristic: heuristics) {
             utility += (heuristic.run(s));
         }
@@ -48,19 +50,33 @@ public class TrainPlayerSkeleton {
     // This is the real main(), so you can run non-static;
     private void execute() {
         State s = new State();
-        new TFrame(s);
         TrainPlayerSkeleton p = new TrainPlayerSkeleton();
-        while (!s.hasLost()) {
-            s.makeMove(p.pickMove(s, s.legalMoves()));
-            s.draw();
-            s.drawNext(0, 0);
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        for (int i = 0; i < 1000000; i ++) {
+            while (!s.hasLost()) {
+                StateCopy befMove = new StateCopy(s);
+                s.makeMove(p.pickMove(s, s.legalMoves()));
+                StateCopy aftMove = new StateCopy(s);
+
+                /**
+                 * update weights
+                 * Note that alpha, the step cost, is 0.0001. We pick a small value to prevent falling into local min/max.
+                 * Discount factor is represented by 1. Since we are only looking ahead 1 move, we leave discount factor as 1.
+                 */
+                int j = 0;
+                for (Heuristic heuristic: heuristics) {
+                    weights[j] += (0.0001 * (aftMove.getRowsCleared() + 1 * valueFunction(aftMove) - valueFunction(befMove))
+                            * heuristic.run(befMove));
+                    System.out.println("weights[" + j + "] is " + weights[j] + " i is: " + i);
+                    j++;
+                }
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
+            System.out.println("You have completed " + s.getRowsCleared() + " rows.");
         }
-        System.out.println("You have completed " + s.getRowsCleared() + " rows.");
     }
 
 
