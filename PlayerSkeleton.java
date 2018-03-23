@@ -368,7 +368,7 @@ class MaxHeightHeuristic implements Heuristic {
                 maxHeight = height;
             }
         }
-        return maxHeight;
+        return maxHeight * -1;
     }
 }
 
@@ -390,6 +390,6 @@ class AvgHeightHeuristic implements  Heuristic {
             heightIncrease += top[i] - prevTop[i];
         }
 
-        return weight * (heightIncrease / length);
+        return weight * (heightIncrease / length) * -1;
     }
 }
