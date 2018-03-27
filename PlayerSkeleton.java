@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class PlayerSkeleton {
     private static int HEIGHT_HEURISTIC_INDEX = 0;
@@ -337,13 +338,16 @@ interface Heuristic {
 class RowsClearedHeuristic implements Heuristic {
     private double weight;
 
+    RowsClearedHeuristic() {
+    }
+
     RowsClearedHeuristic(double weight) {
         this.weight = weight;
     }
 
 
     public double run(StateCopy s) {
-        return s.getRowsCleared() * weight;
+        return s.getRowsCleared();
     }
 }
 
@@ -382,7 +386,7 @@ class AvgHeightHeuristic implements  Heuristic {
     public double run(StateCopy s) {
         int[] prevTop = s.getPreviousTop();
         int[] top = s.getTop();
-
+        
         int length = top.length;
         double heightIncrease = 0;
 
