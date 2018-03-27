@@ -42,7 +42,7 @@ public class PlayerSkeleton {
     private double valueFunction(StateCopy s) {
         double value = 0;
         int i = 0;
-        for (Heuristic heuristic: heuristics) {
+        for (Heuristic heuristic : heuristics) {
             value += (weights[i] * heuristic.run(s));
             i++;
         }
@@ -212,6 +212,13 @@ class StateCopy {
         return pTop;
     }
 
+    public static final int getCols() {
+        return COLS;
+    }
+
+    public static final int getRows() {
+        return ROWS;
+    }
 
     public int getNextPiece() {
         return nextPiece;
@@ -391,5 +398,32 @@ class AvgHeightHeuristic implements  Heuristic {
         }
 
         return weight * (heightIncrease / length) * -1;
+    }
+}
+
+class HolesHeuristic implements Heuristic {
+    private double weight;
+
+    HolesHeuristic(double weight) {
+        this.weight = weight;
+    }
+     
+    public double run(StateCopy s) {
+        int[][] field = s.getField();
+        int[] tops = s.getTop();
+        
+        int numOfHoles = 0;
+        int cols = s.getCols();
+        
+        for(int c = 0; c < cols; c++) {
+            int top = tops[c]-2; 
+            
+            for(int r = top; r < 0; r--) {
+                if(field[r][c] == 0)
+                    numOfHoles++;
+            }           
+        }
+        
+        return weight * numOfHoles;
     }
 }
