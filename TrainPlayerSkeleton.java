@@ -49,9 +49,9 @@ public class TrainPlayerSkeleton {
 
     // This is the real main(), so you can run non-static;
     private void execute() {
-        State s = new State();
         TrainPlayerSkeleton p = new TrainPlayerSkeleton();
-        for (int i = 0; i < 1000000; i ++) {
+        for (int i = 0; i < 100; i ++) {
+            State s = new State();
             while (!s.hasLost()) {
                 StateCopy befMove = new StateCopy(s);
                 s.makeMove(p.pickMove(s, s.legalMoves()));
@@ -67,6 +67,7 @@ public class TrainPlayerSkeleton {
                     weights[j] += (0.0001 * (aftMove.getRowsCleared() + 1.0 * valueFunction(aftMove) - valueFunction(befMove))
                             * heuristic.run(befMove));
                     j++;
+
                 }
                 try {
                     Thread.sleep(1);
