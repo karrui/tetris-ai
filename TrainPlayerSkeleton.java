@@ -50,12 +50,13 @@ public class TrainPlayerSkeleton {
     // This is the real main(), so you can run non-static;
     private void execute() {
         TrainPlayerSkeleton p = new TrainPlayerSkeleton();
-        for (int i = 0; i < 100; i ++) {
+        for (int i = 0; i < 1; i ++) {
             State s = new State();
             while (!s.hasLost()) {
                 StateCopy befMove = new StateCopy(s);
-                s.makeMove(p.pickMove(s, s.legalMoves()));
                 StateCopy aftMove = new StateCopy(s);
+                aftMove.makeMove(p.pickMove(s, s.legalMoves()));
+                s.makeMove(p.pickMove(s, s.legalMoves()));
 
                 /**
                  * update weights
@@ -66,6 +67,22 @@ public class TrainPlayerSkeleton {
                 for (Heuristic heuristic: heuristics) {
                     weights[j] += (0.0001 * (aftMove.getRowsCleared() + 1.0 * valueFunction(aftMove) - valueFunction(befMove))
                             * heuristic.run(befMove));
+                    if (j == 0) {
+                        System.out.println("aftMove.getRowsCleared is: " + aftMove.getRowsCleared());
+                        System.out.println("valueFunction(aftMove) is: " + valueFunction(aftMove));
+                        System.out.println("valueFunction(befMove) is: " + valueFunction(befMove));
+                        // Should find the difference for aft and bef I guess
+                        System.out.println("heuristic.run(befMove) is: " + heuristic.run(befMove));
+                        System.out.println("weights[0] is: " + weights[0]);
+                    }
+                    if (j == 2) {
+                        System.out.println("aftMove.getRowsCleared is: " + aftMove.getRowsCleared());
+                        System.out.println("valueFunction(aftMove) is: " + valueFunction(aftMove));
+                        System.out.println("valueFunction(befMove) is: " + valueFunction(befMove));
+                        // Should find the difference for aft and bef I guess
+                        System.out.println("heuristic.run(befMove) is: " + heuristic.run(befMove));
+                        System.out.println("weights[2] is: " + weights[2]);
+                    }
                     j++;
 
                 }
