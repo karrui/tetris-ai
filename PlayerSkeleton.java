@@ -2,6 +2,7 @@
 public class PlayerSkeleton {
 
 	//implement this function to have a working system
+	//number returns specifies the row index that the piece will fall into
 	public int pickMove(State s, int[][] legalMoves) {
 		
 		return 0;
