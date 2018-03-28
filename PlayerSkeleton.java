@@ -5,12 +5,15 @@ public class PlayerSkeleton {
     private static int ROWS_CLEARED_HEURISTIC_INDEX = 1;
     private static int AVG_HEIGHT_INCREASE_HEURISTIC_INDEX = 2;
     private static int HOLES_HEURISTIC_INDEX = 3;
+    private static int COL_ONE = 4;
 
+    private static int COL_ONE = 0;
+    
     private ArrayList<Heuristic> heuristics = new ArrayList<>();
 
     // update these weights, negative for minimize, positive for maximize.
     // Probably doesn't matter since machine will slowly move it to the correct value
-    private double[] weights = {-0.5, 1, -0.5, -0.5};
+    private double[] weights = {-0.5, 1, -0.5, -0.5, -0.5};
 
 
     PlayerSkeleton() {
@@ -20,6 +23,7 @@ public class PlayerSkeleton {
         heuristics.add(new MaxHeightHeuristic(weights[HEIGHT_HEURISTIC_INDEX]));
         heuristics.add(new RowsClearedHeuristic(weights[ROWS_CLEARED_HEURISTIC_INDEX]));
         heuristics.add(new HolesHeuristic(weights[HOLES_HEURISTIC_INDEX]));
+        heuristics.add(new ColumnOneHeuristic(weights[COL_ONE]));
     }
 
 
@@ -420,7 +424,7 @@ class HolesHeuristic implements Heuristic {
         for(int c = 0; c < cols; c++) {
             int r = tops[c]-2; 
             
-            for(int r; r < 0; r--) {
+            for(r; r >= 0; r--) {
                 if(field[r][c] == 0)
                     numOfHoles++;
             }           
@@ -429,3 +433,16 @@ class HolesHeuristic implements Heuristic {
         return weight * numOfHoles;
     }
 }
+
+class ColumnOneHeuristic implements Heuristic {
+    private double weight;
+
+    ColumnOne(double weight){
+        this.wegiht = weight;
+    }
+
+    public double run(StateCopy s) {
+        int [] tops = s.getTop();
+        return weight * tops[COL_ONE];
+    }
+    
