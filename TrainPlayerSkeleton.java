@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 
 public class TrainPlayerSkeleton {
-    private static int HEIGHT_HEURISTIC_INDEX = 0;
+    private static int MAX_HEIGHT_HEURISTIC_INDEX = 0;
     private static int ROWS_CLEARED_HEURISTIC_INDEX = 1;
     private static int AVG_HEIGHT_INCREASE_HEURISTIC_INDEX = 2;
 
@@ -12,9 +12,10 @@ public class TrainPlayerSkeleton {
     private double[] weights = {0.0000001, 0.0000001, 0.0000001};
 
     TrainPlayerSkeleton() {
-        heuristics.add(new AvgHeightHeuristic(weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX]));
-        heuristics.add(new MaxHeightHeuristic(weights[HEIGHT_HEURISTIC_INDEX]));
+        // I've changed order heuristics are added to aid correct update of weights
+        heuristics.add(new MaxHeightHeuristic(weights[MAX_HEIGHT_HEURISTIC_INDEX]));
         heuristics.add(new RowsClearedHeuristic(weights[ROWS_CLEARED_HEURISTIC_INDEX]));
+        heuristics.add(new AvgHeightHeuristic(weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX]));
     }
 
 
@@ -54,8 +55,9 @@ public class TrainPlayerSkeleton {
             State s = new State();
             while (!s.hasLost()) {
                 StateCopy befMove = new StateCopy(s);
-                s.makeMove(p.pickMove(s, s.legalMoves()));
                 StateCopy aftMove = new StateCopy(s);
+                aftMove.makeMove(p.pickMove(s, s.legalMoves()));
+                s.makeMove(p.pickMove(s, s.legalMoves()));
 
                 /**
                  * update weights
@@ -65,9 +67,8 @@ public class TrainPlayerSkeleton {
                 int j = 0;
                 for (Heuristic heuristic: heuristics) {
                     weights[j] += (0.0001 * (aftMove.getRowsCleared() + 1.0 * valueFunction(aftMove) - valueFunction(befMove))
-                            * heuristic.run(befMove));
+                            * heuristic.getDerivative(befMove, aftMove));
                     j++;
-
                 }
                 try {
                     Thread.sleep(1);

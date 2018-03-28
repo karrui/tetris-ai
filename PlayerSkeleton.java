@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class PlayerSkeleton {
     private static int HEIGHT_HEURISTIC_INDEX = 0;
@@ -332,6 +333,8 @@ class ArrayHelper {
 
 interface Heuristic {
     double run(StateCopy s);
+
+    double getDerivative(StateCopy bef, StateCopy aft);
 }
 
 class RowsClearedHeuristic implements Heuristic {
@@ -343,7 +346,11 @@ class RowsClearedHeuristic implements Heuristic {
 
 
     public double run(StateCopy s) {
-        return s.getRowsCleared() * weight;
+        return s.getRowsCleared();
+    }
+
+    public double getDerivative(StateCopy bef, StateCopy aft) {
+        return aft.getTotalRowsCleared() - bef.getTotalRowsCleared();
     }
 }
 
@@ -357,6 +364,10 @@ class MaxHeightHeuristic implements Heuristic {
 
     public double run(StateCopy s) {
         return weight * getMaxHeight(s);
+    }
+
+    public double getDerivative(StateCopy bef, StateCopy aft) {
+        return weight * getMaxHeight(aft);
     }
 
     private int getMaxHeight(StateCopy s) {
@@ -382,6 +393,20 @@ class AvgHeightHeuristic implements  Heuristic {
     public double run(StateCopy s) {
         int[] prevTop = s.getPreviousTop();
         int[] top = s.getTop();
+
+        int length = top.length;
+        double heightIncrease = 0;
+
+        for(int i = 0; i < length; i++) {
+            heightIncrease += top[i] - prevTop[i];
+        }
+
+        return weight * (heightIncrease / length) * -1;
+    }
+
+    public double getDerivative(StateCopy bef, StateCopy aft) {
+        int[] prevTop = bef.getTop();
+        int[] top = aft.getTop();
 
         int length = top.length;
         double heightIncrease = 0;
