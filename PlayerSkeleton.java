@@ -386,14 +386,14 @@ class AvgHeightHeuristic implements  Heuristic {
     public double run(StateCopy s) {
         int[] prevTop = s.getPreviousTop();
         int[] top = s.getTop();
-        
+
         int length = top.length;
         double heightIncrease = 0;
 
         for(int i = 0; i < length; i++) {
             heightIncrease += top[i] - prevTop[i];
         }
-
+        // System.out.println("weight is: " + weight);
         return weight * (heightIncrease / length) * -1;
     }
 }

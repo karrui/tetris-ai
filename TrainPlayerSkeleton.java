@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 
 public class TrainPlayerSkeleton {
-    private static int HEIGHT_HEURISTIC_INDEX = 0;
+    private static int MAX_HEIGHT_HEURISTIC_INDEX = 0;
     private static int ROWS_CLEARED_HEURISTIC_INDEX = 1;
     private static int AVG_HEIGHT_INCREASE_HEURISTIC_INDEX = 2;
 
@@ -12,9 +12,10 @@ public class TrainPlayerSkeleton {
     private double[] weights = {0.0000001, 0.0000001, 0.0000001};
 
     TrainPlayerSkeleton() {
-        heuristics.add(new AvgHeightHeuristic(weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX]));
-        heuristics.add(new MaxHeightHeuristic(weights[HEIGHT_HEURISTIC_INDEX]));
+        // I've changed order heuristics are added to aid correct update of weights
+        heuristics.add(new MaxHeightHeuristic(weights[MAX_HEIGHT_HEURISTIC_INDEX]));
         heuristics.add(new RowsClearedHeuristic(weights[ROWS_CLEARED_HEURISTIC_INDEX]));
+        heuristics.add(new AvgHeightHeuristic(weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX]));
     }
 
 
@@ -67,15 +68,20 @@ public class TrainPlayerSkeleton {
                 for (Heuristic heuristic: heuristics) {
                     weights[j] += (0.0001 * (aftMove.getRowsCleared() + 1.0 * valueFunction(aftMove) - valueFunction(befMove))
                             * heuristic.run(befMove));
-                    if (j == 0) {
+                    /**
+                    if (j == 1) {
+                        // RowsClearedHeuristic isn't working because we don't store the number of rows cleared for
+                        // befMove. Hence it always default to one.
                         System.out.println("aftMove.getRowsCleared is: " + aftMove.getRowsCleared());
                         System.out.println("valueFunction(aftMove) is: " + valueFunction(aftMove));
                         System.out.println("valueFunction(befMove) is: " + valueFunction(befMove));
                         // Should find the difference for aft and bef I guess
                         System.out.println("heuristic.run(befMove) is: " + heuristic.run(befMove));
-                        System.out.println("weights[0] is: " + weights[0]);
+                        System.out.println("weights[1] is: " + weights[1]);
                     }
+                     */
                     if (j == 2) {
+                        //
                         System.out.println("aftMove.getRowsCleared is: " + aftMove.getRowsCleared());
                         System.out.println("valueFunction(aftMove) is: " + valueFunction(aftMove));
                         System.out.println("valueFunction(befMove) is: " + valueFunction(befMove));
