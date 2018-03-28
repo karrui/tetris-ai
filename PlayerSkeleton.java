@@ -5,7 +5,7 @@ public class PlayerSkeleton {
     private static int ROWS_CLEARED_HEURISTIC_INDEX = 1;
     private static int AVG_HEIGHT_INCREASE_HEURISTIC_INDEX = 2;
     private static int HOLES_HEURISTIC_INDEX = 3;
-    private static int COL_ONE = 4;
+    private static int COL_ONE_HEURISTIC = 4;
 
     private static int COL_ONE = 0;
     
@@ -23,7 +23,7 @@ public class PlayerSkeleton {
         heuristics.add(new MaxHeightHeuristic(weights[HEIGHT_HEURISTIC_INDEX]));
         heuristics.add(new RowsClearedHeuristic(weights[ROWS_CLEARED_HEURISTIC_INDEX]));
         heuristics.add(new HolesHeuristic(weights[HOLES_HEURISTIC_INDEX]));
-        heuristics.add(new ColumnOneHeuristic(weights[COL_ONE]));
+        heuristics.add(new ColumnOneHeuristic(weights[COL_ONE_HEURISTIC]));
     }
 
 
