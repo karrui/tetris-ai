@@ -16,7 +16,7 @@ public class TrainPlayerSkeleton {
         heuristics.add(new AvgHeightHeuristic(weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX]));
         heuristics.add(new MaxHeightHeuristic(weights[HEIGHT_HEURISTIC_INDEX]));
         heuristics.add(new RowsClearedHeuristic(weights[ROWS_CLEARED_HEURISTIC_INDEX]));
-        //heuristics.add(new HolesHeuristic(weights[HOLES_HEURISTIC_INDEX]));
+       /heuristics.add(new HolesHeuristic(weights[HOLES_HEURISTIC_INDEX]));
     }
 
 

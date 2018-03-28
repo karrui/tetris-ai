@@ -19,7 +19,7 @@ public class PlayerSkeleton {
         heuristics.add(new AvgHeightHeuristic(weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX]));
         heuristics.add(new MaxHeightHeuristic(weights[HEIGHT_HEURISTIC_INDEX]));
         heuristics.add(new RowsClearedHeuristic(weights[ROWS_CLEARED_HEURISTIC_INDEX]));
-        heuristics.add(new HolesHeuristic(weihts[HOLES_HEURISTIC_INDEX]));
+        heuristics.add(new HolesHeuristic(weights[HOLES_HEURISTIC_INDEX]));
     }
 
 
@@ -418,9 +418,9 @@ class HolesHeuristic implements Heuristic {
         int cols = s.getCols();
         
         for(int c = 0; c < cols; c++) {
-            int top = tops[c]-2; 
+            int r = tops[c]-2; 
             
-            for(int r = top; r < 0; r--) {
+            for(int r; r < 0; r--) {
                 if(field[r][c] == 0)
                     numOfHoles++;
             }           
