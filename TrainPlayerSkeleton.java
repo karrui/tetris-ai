@@ -4,17 +4,19 @@ public class TrainPlayerSkeleton {
     private static int HEIGHT_HEURISTIC_INDEX = 0;
     private static int ROWS_CLEARED_HEURISTIC_INDEX = 1;
     private static int AVG_HEIGHT_INCREASE_HEURISTIC_INDEX = 2;
+    private static int HOLES_HEURISTIC_INDEX = 3;
 
     private ArrayList<Heuristic> heuristics = new ArrayList<>();
 
     // Machine will learn and update these weights via TD algorithm.
     // Weights are arbitrarily initialised to 0.0, negative for minimize, positive for maximize.
-    private double[] weights = {0.0000001, 0.0000001, 0.0000001};
+    private double[] weights = {0.0000001, 0.0000001, 0.0000001, 0.0000001};
 
     TrainPlayerSkeleton() {
         heuristics.add(new AvgHeightHeuristic(weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX]));
         heuristics.add(new MaxHeightHeuristic(weights[HEIGHT_HEURISTIC_INDEX]));
         heuristics.add(new RowsClearedHeuristic(weights[ROWS_CLEARED_HEURISTIC_INDEX]));
+        heuristics.add(new HolesHeuristic(weights[HOLES_HEURISTIC_INDEX]));
     }
 
 
