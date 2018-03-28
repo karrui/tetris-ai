@@ -333,6 +333,8 @@ class ArrayHelper {
 
 interface Heuristic {
     double run(StateCopy s);
+
+    double getDerivative(StateCopy bef, StateCopy aft);
 }
 
 class RowsClearedHeuristic implements Heuristic {
@@ -349,6 +351,10 @@ class RowsClearedHeuristic implements Heuristic {
     public double run(StateCopy s) {
         return s.getRowsCleared();
     }
+
+    public double getDerivative(StateCopy bef, StateCopy aft) {
+        return aft.getTotalRowsCleared() - bef.getTotalRowsCleared();
+    }
 }
 
 class MaxHeightHeuristic implements Heuristic {
@@ -361,6 +367,10 @@ class MaxHeightHeuristic implements Heuristic {
 
     public double run(StateCopy s) {
         return weight * getMaxHeight(s);
+    }
+
+    public double getDerivative(StateCopy bef, StateCopy aft) {
+        return weight * getMaxHeight(aft);
     }
 
     private int getMaxHeight(StateCopy s) {
@@ -386,6 +396,20 @@ class AvgHeightHeuristic implements  Heuristic {
     public double run(StateCopy s) {
         int[] prevTop = s.getPreviousTop();
         int[] top = s.getTop();
+
+        int length = top.length;
+        double heightIncrease = 0;
+
+        for(int i = 0; i < length; i++) {
+            heightIncrease += top[i] - prevTop[i];
+        }
+        // System.out.println("weight is: " + weight);
+        return weight * (heightIncrease / length) * -1;
+    }
+
+    public double getDerivative(StateCopy bef, StateCopy aft) {
+        int[] prevTop = bef.getTop();
+        int[] top = aft.getTop();
 
         int length = top.length;
         double heightIncrease = 0;

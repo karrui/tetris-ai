@@ -51,7 +51,7 @@ public class TrainPlayerSkeleton {
     // This is the real main(), so you can run non-static;
     private void execute() {
         TrainPlayerSkeleton p = new TrainPlayerSkeleton();
-        for (int i = 0; i < 1; i ++) {
+        for (int i = 0; i < 100; i ++) {
             State s = new State();
             while (!s.hasLost()) {
                 StateCopy befMove = new StateCopy(s);
@@ -67,28 +67,18 @@ public class TrainPlayerSkeleton {
                 int j = 0;
                 for (Heuristic heuristic: heuristics) {
                     weights[j] += (0.0001 * (aftMove.getRowsCleared() + 1.0 * valueFunction(aftMove) - valueFunction(befMove))
-                            * heuristic.run(befMove));
+                            * heuristic.getDerivative(befMove, aftMove));
                     /**
-                    if (j == 1) {
-                        // RowsClearedHeuristic isn't working because we don't store the number of rows cleared for
-                        // befMove. Hence it always default to one.
-                        System.out.println("aftMove.getRowsCleared is: " + aftMove.getRowsCleared());
-                        System.out.println("valueFunction(aftMove) is: " + valueFunction(aftMove));
-                        System.out.println("valueFunction(befMove) is: " + valueFunction(befMove));
-                        // Should find the difference for aft and bef I guess
-                        System.out.println("heuristic.run(befMove) is: " + heuristic.run(befMove));
-                        System.out.println("weights[1] is: " + weights[1]);
-                    }
-                     */
                     if (j == 2) {
                         //
                         System.out.println("aftMove.getRowsCleared is: " + aftMove.getRowsCleared());
                         System.out.println("valueFunction(aftMove) is: " + valueFunction(aftMove));
                         System.out.println("valueFunction(befMove) is: " + valueFunction(befMove));
                         // Should find the difference for aft and bef I guess
-                        System.out.println("heuristic.run(befMove) is: " + heuristic.run(befMove));
+                        System.out.println("heuristic.getDerivative(befMove, aftMove) is: " + heuristic.run(befMove));
                         System.out.println("weights[2] is: " + weights[2]);
                     }
+                     */
                     j++;
 
                 }
