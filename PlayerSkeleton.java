@@ -340,9 +340,6 @@ interface Heuristic {
 class RowsClearedHeuristic implements Heuristic {
     private double weight;
 
-    RowsClearedHeuristic() {
-    }
-
     RowsClearedHeuristic(double weight) {
         this.weight = weight;
     }

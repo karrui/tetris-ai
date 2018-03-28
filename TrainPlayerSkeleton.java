@@ -58,7 +58,7 @@ public class TrainPlayerSkeleton {
                 StateCopy aftMove = new StateCopy(s);
                 aftMove.makeMove(p.pickMove(s, s.legalMoves()));
                 s.makeMove(p.pickMove(s, s.legalMoves()));
-                
+
                 /**
                  * update weights
                  * Note that alpha, the step cost, is 0.0001. We pick a small value to prevent falling into local min/max.
