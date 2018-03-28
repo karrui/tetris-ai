@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 
 public class TrainPlayerSkeleton {
-    private static int HEIGHT_HEURISTIC_INDEX = 0;
+    private static int MAX_HEIGHT_HEURISTIC_INDEX = 0;
     private static int ROWS_CLEARED_HEURISTIC_INDEX = 1;
     private static int AVG_HEIGHT_INCREASE_HEURISTIC_INDEX = 2;
 
@@ -12,9 +12,10 @@ public class TrainPlayerSkeleton {
     private double[] weights = {0.0000001, 0.0000001, 0.0000001};
 
     TrainPlayerSkeleton() {
-        heuristics.add(new AvgHeightHeuristic(weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX]));
-        heuristics.add(new MaxHeightHeuristic(weights[HEIGHT_HEURISTIC_INDEX]));
+        // I've changed order heuristics are added to aid correct update of weights
+        heuristics.add(new MaxHeightHeuristic(weights[MAX_HEIGHT_HEURISTIC_INDEX]));
         heuristics.add(new RowsClearedHeuristic(weights[ROWS_CLEARED_HEURISTIC_INDEX]));
+        heuristics.add(new AvgHeightHeuristic(weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX]));
     }
 
 
@@ -49,13 +50,14 @@ public class TrainPlayerSkeleton {
 
     // This is the real main(), so you can run non-static;
     private void execute() {
-        State s = new State();
         TrainPlayerSkeleton p = new TrainPlayerSkeleton();
-        for (int i = 0; i < 1000000; i ++) {
+        for (int i = 0; i < 100; i ++) {
+            State s = new State();
             while (!s.hasLost()) {
                 StateCopy befMove = new StateCopy(s);
-                s.makeMove(p.pickMove(s, s.legalMoves()));
                 StateCopy aftMove = new StateCopy(s);
+                aftMove.makeMove(p.pickMove(s, s.legalMoves()));
+                s.makeMove(p.pickMove(s, s.legalMoves()));
 
                 /**
                  * update weights
@@ -65,8 +67,20 @@ public class TrainPlayerSkeleton {
                 int j = 0;
                 for (Heuristic heuristic: heuristics) {
                     weights[j] += (0.0001 * (aftMove.getRowsCleared() + 1.0 * valueFunction(aftMove) - valueFunction(befMove))
-                            * heuristic.run(befMove));
+                            * heuristic.getDerivative(befMove, aftMove));
+                    /**
+                    if (j == 2) {
+                        //
+                        System.out.println("aftMove.getRowsCleared is: " + aftMove.getRowsCleared());
+                        System.out.println("valueFunction(aftMove) is: " + valueFunction(aftMove));
+                        System.out.println("valueFunction(befMove) is: " + valueFunction(befMove));
+                        // Should find the difference for aft and bef I guess
+                        System.out.println("heuristic.getDerivative(befMove, aftMove) is: " + heuristic.run(befMove));
+                        System.out.println("weights[2] is: " + weights[2]);
+                    }
+                     */
                     j++;
+
                 }
                 try {
                     Thread.sleep(1);
