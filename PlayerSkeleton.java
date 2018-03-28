@@ -5,32 +5,6 @@ public class PlayerSkeleton {
     private static int ROWS_CLEARED_HEURISTIC_INDEX = 1;
     private static int AVG_HEIGHT_INCREASE_HEURISTIC_INDEX = 2;
 
-<<<<<<< HEAD
-	//implement this function to have a working system
-	//number returns specifies the row index that the piece will fall into
-	public int pickMove(State s, int[][] legalMoves) {
-		
-		return 0;
-	}
-	
-	public static void main(String[] args) {
-		State s = new State();
-		new TFrame(s);
-		PlayerSkeleton p = new PlayerSkeleton();
-		while(!s.hasLost()) {
-			s.makeMove(p.pickMove(s,s.legalMoves()));
-			s.draw();
-			s.drawNext(0,0);
-			try {
-				Thread.sleep(300);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		System.out.println("You have completed "+s.getRowsCleared()+" rows.");
-	}
-	
-=======
     private ArrayList<Heuristic> heuristics = new ArrayList<>();
 
     // update these weights, negative for minimize, positive for maximize.
@@ -371,7 +345,6 @@ class RowsClearedHeuristic implements Heuristic {
     public double run(StateCopy s) {
         return s.getRowsCleared() * weight;
     }
->>>>>>> 133b22789b40f4323ce6597348f8c71f392f1f01
 }
 
 class MaxHeightHeuristic implements Heuristic {
