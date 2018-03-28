@@ -403,7 +403,7 @@ class AvgHeightHeuristic implements  Heuristic {
         for(int i = 0; i < length; i++) {
             heightIncrease += top[i] - prevTop[i];
         }
-        // System.out.println("weight is: " + weight);
+
         return weight * (heightIncrease / length) * -1;
     }
 
@@ -417,7 +417,7 @@ class AvgHeightHeuristic implements  Heuristic {
         for(int i = 0; i < length; i++) {
             heightIncrease += top[i] - prevTop[i];
         }
-        // System.out.println("weight is: " + weight);
+
         return weight * (heightIncrease / length) * -1;
     }
 }
