@@ -8,7 +8,7 @@ public class PlayerSkeleton {
 
     // update these weights, negative for minimize, positive for maximize.
     // Probably doesn't matter since machine will slowly move it to the correct value
-    private double[] weights = {0.5, 1, 0.5, 3};
+    private double[] weights = {4, 3, 0.5, 3, 3};
 
 
     PlayerSkeleton() {
@@ -18,6 +18,7 @@ public class PlayerSkeleton {
         heuristics.add(new RowsClearedHeuristic());
         heuristics.add(new AvgHeightHeuristic());
         heuristics.add(new HolesHeuristic());
+        heuristics.add(new ColumnTransitionsHeuristic());
 
         // column heuristics
 //        for (int i = 0; i < State.COLS; i++) {
@@ -427,6 +428,38 @@ class HolesHeuristic implements Heuristic {
         }
 
         return -(numOfHoles);
+    }
+
+    public double getDerivative(StateCopy bef, StateCopy aft) {
+        return run(aft);
+    }
+}
+
+// MINIMIZE - NEGATIVE
+class ColumnTransitionsHeuristic implements  Heuristic {
+    public double run(StateCopy s) {
+        int[][] field = s.getField();
+        int[] top = s.getTop();
+
+        int colTransitions = 0;
+
+        for (int c = 0; c < State.COLS; c++) {
+            boolean priorCellFilled = true;
+            for (int r = 0; r < top[c]; r++) {
+                boolean currCellFilled = false;
+                if (field[r][c] != 0) {
+                    currCellFilled = true;
+                }
+
+                if (priorCellFilled != currCellFilled) {
+                    colTransitions++;
+                }
+
+                priorCellFilled = currCellFilled;
+            }
+        }
+
+        return -(colTransitions);
     }
 
     public double getDerivative(StateCopy bef, StateCopy aft) {
