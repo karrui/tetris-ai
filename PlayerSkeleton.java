@@ -462,7 +462,7 @@ class RowTransitionsHeuristic implements Heuristic {
             int tmp2 = field[r][1];
             
             for(int c = 1; c < State.COLS; c++) {
-                if(((tmp1 || tmp2) == 0) && ((tmp1 || tmp2) != 0)) {
+                if((tmp1 == 0 || tmp2 == 0) && (tmp1 != 0 || tmp2 != 0)) {
                     rowTransitions++;
                 }
                 tmp1 = tmp2;
