@@ -3,14 +3,13 @@ import java.util.Arrays;
 
 public class PlayerSkeleton {
 
-    private static int COL_ONE = 0;
-    
+
     private ArrayList<Heuristic> heuristics = new ArrayList<>();
 
     // update these weights, negative for minimize, positive for maximize.
     // Probably doesn't matter since machine will slowly move it to the correct value
-
     private double[] weights = {0.5, 1, 0.5, 3};
+
 
     PlayerSkeleton() {
         // update these weights, negative for minimize, positive for maximize.
@@ -21,10 +20,10 @@ public class PlayerSkeleton {
         heuristics.add(new HolesHeuristic());
 
         // column heuristics
-//        for (int i = 0; i < State.COLS; i++) {
-//            heuristics.add(new ColumnHeuristic());
-//        }
-
+        //        for (int i = 0; i < State.COLS; i++) {
+        //            heuristics.add(new ColumnHeuristic());
+        //        }
+    }
 
 
     //implement this function to have a working system
@@ -217,13 +216,6 @@ class StateCopy {
         return pTop;
     }
 
-    public static final int getCols() {
-        return COLS;
-    }
-
-    public static final int getRows() {
-        return ROWS;
-    }
 
     public int getNextPiece() {
         return nextPiece;
@@ -459,42 +451,36 @@ class ColumnHeuristic implements Heuristic {
     }
 }
 
-class HolesHeuristic implements Heuristic {
-    private double weight;
-
-    HolesHeuristic(double weight) {
-        this.weight = weight;
-    }
-     
+class RowTransitionsHeuristic implements Heuristic {
     public double run(StateCopy s) {
-        int[][] field = s.getField();
-        int[] tops = s.getTop();
+        int[][] field = s.getField;
+        int maxRow = getMaxHeight(s);
+        int rowTransitions = 0;
         
-        int numOfHoles = 0;
-        int cols = s.getCols();
-        
-        for(int c = 0; c < cols; c++) {
-            int r = tops[c]-2; 
+        for(int r = 0; r < maxRow; r++) {
+            int tmp1 = field[r][0];
+            int tmp2 = field[r][1];
             
-            for(r; r >= 0; r--) {
-                if(field[r][c] == 0)
-                    numOfHoles++;
-            }           
+            for(int c = 1; c < State.COLS; c++) {
+                if(((tmp1 || tmp2) == 0) && ((tmp1 || tmp2) != 0)) {
+                    rowTransitions++;
+                }
+                tmp1 = tmp2;
+                tmp2 = field[r][c+1];
+            }
         }
-        
-        return weight * numOfHoles;
-    }
-}
-
-class ColumnOneHeuristic implements Heuristic {
-    private double weight;
-
-    ColumnOne(double weight){
-        this.wegiht = weight;
-    }
-
-    public double run(StateCopy s) {
-        int [] tops = s.getTop();
-        return weight * tops[COL_ONE];
+            
     }
     
+    private int getMaxHeight(StateCopy s) {
+        int[] top = s.getTop();
+        int maxHeight = 0;
+
+        for (int height : top) {
+            if (maxHeight < height) {
+                maxHeight = height;
+            }
+        }
+        return maxHeight;
+    }
+}
