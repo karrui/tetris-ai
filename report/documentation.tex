@@ -42,33 +42,35 @@ Chee Wee, \\
 	
 	
 \section{Utility Function}
-We defined the utility function as a linear function $F$ with each heuristic $h_i \in Heuristics$ having an assigned weight $w_i$, where $i = 1...n$, with $n$ being the number of heuristics. Each $h_i$ derives a real value from a state $s$. The function is then defined as:
-	$$F(s) = \sum_{i = 1}^{n} w_ih_i(s)$$
-The heuristics $h_i$ used will be explained in depth in Section \ref{heuristics}.
+We defined the utility function as a linear function $F$ with each feature $f_i \in Features$ having an assigned weight $w_i$, where $i = 1...n$, with $n$ being the number of features. Each $f_i$ derives a real value from a state $s$. The function is then defined as:
+	$$F(s) = \sum_{i = 1}^{n} w_if_i(s)$$
+The features $f_i$ used will be explained in depth in Section \ref{features}.
 	
-\section{Heuristics Used} \label{heuristics}
-
-\subsection{Rows Cleared}
-
-\subsection{Maximum Height Increase}
-
-\subsection{Average Height Increase}
-
-\subsection{Number of Holes}
-
-\subsection{Well depth}
-
-\subsection{Game Loss}
-
-\subsection{Levelness of Top}
+\section{Features Used} \label{features}
+\begin{itemize}
+  \item \textbf{RowsCleared}
+  		- Number of rows cleared when the piece is put on the board
+  \item \textbf{MaxHeightIncrease} 
+  		- The maximum height increase when the piece is put on the board
+  \item \textbf{AvgHeightIncrease} 
+  		- The average height increase when the piece is put on the board
+  \item \textbf{NumHoles} 
+  		- Number of holes when the piece is put on the board; a hole is defined as an empty cell with a non-empty cell above it.
+  \item \textbf{ColumnTransition}
+  		- The total number of column transitions. A column transition occurs when an empty cell is adjacent to a filled cell on the same column and vice versa.
+  \item \textbf{RowTransition}
+  		- The total number of row transitions. A row transition occurs when an empty cell is adjacent to a filled cell on the same row and vice versa.
+  \item \textbf{AbsHeightDiff}
+  		- The height difference between all the columns.
+\end{itemize}
 
 \section{Training Function}
 
 \section{Implementation}
 \subsection{StateCopy}
-In order to correctly apply the heuristics, a new \texttt{StateCopy} class was created, extending the original \texttt{State} class, serving as a clean starting state to apply our heuristics on in order to derive the heuristic value. 
+In order to correctly apply the features, a new \texttt{StateCopy} class was created, extending the original \texttt{State} class, serving as a clean starting state to apply our features on in order to derive the heuristic value. 
 
-Extra variables like \texttt{currentRowsCleared} and \texttt{previousTop} is also added to the \texttt{StateCopy} class in order to obtain the information needed by various heuristics such as the RowsCleared heuristic and the AverageHeight heuristic.
+Extra variables like \texttt{currentRowsCleared} and \texttt{previousTop} is also added to the \texttt{StateCopy} class in order to obtain the information needed by various features such as the RowsCleared feature and the AverageHeight feature.
 
 Using \texttt{StateCopy} also allows us to play moves without affecting the original state of the game.
 
