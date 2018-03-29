@@ -348,9 +348,6 @@ interface Heuristic {
 class RowsClearedHeuristic implements Heuristic {
     private double weight;
 
-    RowsClearedHeuristic() {
-    }
-
     RowsClearedHeuristic(double weight) {
         this.weight = weight;
     }
@@ -412,7 +409,7 @@ class AvgHeightHeuristic implements  Heuristic {
             heightIncrease += top[i] - prevTop[i];
         }
         // System.out.println("weight is: " + weight);
-        return weight * (heightIncrease / length) * -1;
+        return weight * (heightIncrease / length);
     }
 
     public double getDerivative(StateCopy bef, StateCopy aft) {
@@ -421,6 +418,10 @@ class AvgHeightHeuristic implements  Heuristic {
 
         int length = top.length;
         double heightIncrease = 0;
+
+        for (int i = 0; i < length; i++) {
+            heightIncrease += top[i] - prevTop[i];
+        }
 
         return weight * (heightIncrease / length);
     }
@@ -440,7 +441,7 @@ class HolesHeuristic implements Heuristic {
         int numOfHoles = 0;
         
         for(int c = 0; c < State.COLS; c++) {
-            for(int r = 0; r < top[c]; r++) {
+            for(int r = 0; r < top[c] - 2; r++) {
                 if(field[r][c] == 0) {
                     numOfHoles++;
                 }
@@ -451,7 +452,7 @@ class HolesHeuristic implements Heuristic {
     }
 
     public double getDerivative(StateCopy bef, StateCopy aft) {
-        return 0;
+        return run(aft);
     }
 }
 
@@ -470,6 +471,6 @@ class ColumnHeuristic implements Heuristic {
     }
 
     public double getDerivative(StateCopy bef, StateCopy aft) {
-        return 0;
+        return run(aft);
     }
 }
