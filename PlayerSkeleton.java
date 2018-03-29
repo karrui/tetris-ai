@@ -7,6 +7,7 @@ public class PlayerSkeleton {
     private static int AVG_HEIGHT_INCREASE_HEURISTIC_INDEX = 2;
     private static int HOLES_HEURISTIC_INDEX = 3;
     private static int COL_HEIGHT_HEURISTIC_INDEX_START = 4;
+    private static int ABS_HEIGHT_DIFF_HEURISTIC_INDEX = 5;
 
 
     private ArrayList<Heuristic> heuristics = new ArrayList<>();
@@ -24,7 +25,7 @@ public class PlayerSkeleton {
         heuristics.add(new MaxHeightHeuristic(weights[HEIGHT_HEURISTIC_INDEX]));
         heuristics.add(new RowsClearedHeuristic(weights[ROWS_CLEARED_HEURISTIC_INDEX]));
         heuristics.add(new HolesHeuristic(weights[HOLES_HEURISTIC_INDEX]));
-
+        heuristics.add(new absoluteDiffHeuristic(weights[ABS_HEIGHT_DIFF_HEURISTIC_INDEX]));
         // column heuristics
 //        for (int i = 0; i < State.COLS; i++) {
 //            heuristics.add(new ColumnHeuristic(weights[COL_HEIGHT_HEURISTIC_INDEX_START + i], i));
@@ -468,6 +469,33 @@ class ColumnHeuristic implements Heuristic {
     public double run(StateCopy s) {
         int[] tops = s.getTop();
         return weight * tops[index];
+    }
+
+    public double getDerivative(StateCopy bef, StateCopy aft) {
+        return run(aft);
+    }
+}
+
+/**
+ * reduces the overall "bumpiness" of the top layer
+ */
+class absoluteDiffHeuristic implements Heuristic {
+    private double weight;
+
+    absoluteDiffHeuristic(double weight){
+        this.weight = weight;
+    }
+
+    public double run(StateCopy s) {
+        //implement heuristics
+        int absDiff = 0;
+        int[] top = s.getTop();
+
+        for(int i = 0; i < top.length - 1; i++){
+            absDiff += Math.abs(top[i] - top[i + 1]);
+        }
+
+        return weight * absDiff * -1;
     }
 
     public double getDerivative(StateCopy bef, StateCopy aft) {
