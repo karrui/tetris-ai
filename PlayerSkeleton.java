@@ -4,12 +4,13 @@ public class PlayerSkeleton {
     private static int HEIGHT_HEURISTIC_INDEX = 0;
     private static int ROWS_CLEARED_HEURISTIC_INDEX = 1;
     private static int AVG_HEIGHT_INCREASE_HEURISTIC_INDEX = 2;
+    private static int ABS_HEIGHT_DIFF_HEURISTIC_INDEX = 3;
 
     private ArrayList<Heuristic> heuristics = new ArrayList<>();
 
     // update these weights, negative for minimize, positive for maximize.
     // Probably doesn't matter since machine will slowly move it to the correct value
-    private double[] weights = {-0.5, 1, -0.5};
+    private double[] weights = {-0.5, 1, -0.5, -0.5};
 
 
     PlayerSkeleton() {
@@ -18,6 +19,7 @@ public class PlayerSkeleton {
         heuristics.add(new AvgHeightHeuristic(weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX]));
         heuristics.add(new MaxHeightHeuristic(weights[HEIGHT_HEURISTIC_INDEX]));
         heuristics.add(new RowsClearedHeuristic(weights[ROWS_CLEARED_HEURISTIC_INDEX]));
+        heuristics.add(new absoluteDiffHeuristic(weights[ABS_HEIGHT_DIFF_HEURISTIC_INDEX]));
     }
 
 
@@ -391,5 +393,28 @@ class AvgHeightHeuristic implements  Heuristic {
         }
 
         return weight * (heightIncrease / length) * -1;
+    }
+}
+
+/**
+ * reduces the overall "bumpiness" of the top layer
+ */
+class absoluteDiffHeuristic implements Heuristic {
+    private double weight;
+
+    absoluteDiffHeuristic(double weight){
+        this.weight = weight;
+    }
+
+    public double run(StateCopy s) {
+        //implement heuristics
+        int absDiff = 0;
+        int[] top = s.getTop();
+
+        for(int i = 0; i < top.length - 1; i++){
+            absDiff += Math.abs(top[i] - top[i + 1]);
+        }
+        
+        return weight * absDiff * -1;
     }
 }
