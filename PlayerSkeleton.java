@@ -3,6 +3,11 @@ import java.util.Arrays;
 
 public class PlayerSkeleton {
 
+    private static int HEIGHT_HEURISTIC_INDEX = 0;
+    private static int ROWS_CLEARED_HEURISTIC_INDEX = 1;
+    private static int AVG_HEIGHT_INCREASE_HEURISTIC_INDEX = 2;
+    private static int HOLES_HEURISTIC_INDEX = 3;
+    private static int COL_ONE = 4;
 
     private ArrayList<Heuristic> heuristics = new ArrayList<>();
 
@@ -216,6 +221,13 @@ class StateCopy {
         return pTop;
     }
 
+    public static final int getCols() {
+        return COLS;
+    }
+
+    public static final int getRows() {
+        return ROWS;
+    }
 
     public int getNextPiece() {
         return nextPiece;
@@ -340,7 +352,6 @@ interface Heuristic {
     double getDerivative(StateCopy bef, StateCopy aft);
 }
 
-
 // MAXIMIZE - RETURN POSITIVE
 class RowsClearedHeuristic implements Heuristic {
 
@@ -390,7 +401,7 @@ class AvgHeightHeuristic implements  Heuristic {
         for (int i = 0; i < length; i++) {
             heightIncrease += top[i] - prevTop[i];
         }
-        // System.out.println("weight is: " + weight);
+
         return -(heightIncrease / length);
     }
 

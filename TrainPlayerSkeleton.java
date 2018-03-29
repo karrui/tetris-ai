@@ -4,12 +4,13 @@ public class TrainPlayerSkeleton {
     private static int HEIGHT_HEURISTIC_INDEX = 0;
     private static int ROWS_CLEARED_HEURISTIC_INDEX = 1;
     private static int AVG_HEIGHT_INCREASE_HEURISTIC_INDEX = 2;
+    private static int HOLES_HEURISTIC_INDEX = 3;
 
     private ArrayList<Heuristic> heuristics = new ArrayList<>();
 
     // Machine will learn and update these weights via TD algorithm.
     // Weights are arbitrarily initialised to 0.0, negative for minimize, positive for maximize.
-    private double[] weights = {0.0000001, 0.0000001, 0.0000001};
+    private double[] weights = {0.0000001, 0.0000001, 0.0000001, 0.0000001};
 
     TrainPlayerSkeleton() {
         heuristics.add(new AvgHeightHeuristic());
@@ -49,13 +50,14 @@ public class TrainPlayerSkeleton {
 
     // This is the real main(), so you can run non-static;
     private void execute() {
-        State s = new State();
         TrainPlayerSkeleton p = new TrainPlayerSkeleton();
-        for (int i = 0; i < 1000000; i ++) {
+        for (int i = 0; i < 5; i ++) {
+            State s = new State();
             while (!s.hasLost()) {
                 StateCopy befMove = new StateCopy(s);
-                s.makeMove(p.pickMove(s, s.legalMoves()));
                 StateCopy aftMove = new StateCopy(s);
+                aftMove.makeMove(p.pickMove(s, s.legalMoves()));
+                s.makeMove(p.pickMove(s, s.legalMoves()));
 
                 /**
                  * update weights
@@ -65,7 +67,7 @@ public class TrainPlayerSkeleton {
                 int j = 0;
                 for (Heuristic heuristic: heuristics) {
                     weights[j] += (0.0001 * (aftMove.getRowsCleared() + 1.0 * valueFunction(aftMove) - valueFunction(befMove))
-                            * heuristic.run(befMove));
+                            * heuristic.getDerivative(befMove, aftMove));
                     j++;
                 }
                 try {
