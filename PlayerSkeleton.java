@@ -2,33 +2,26 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class PlayerSkeleton {
-    private static int HEIGHT_HEURISTIC_INDEX = 0;
-    private static int ROWS_CLEARED_HEURISTIC_INDEX = 1;
-    private static int AVG_HEIGHT_INCREASE_HEURISTIC_INDEX = 2;
-    private static int HOLES_HEURISTIC_INDEX = 3;
-    private static int COL_HEIGHT_HEURISTIC_INDEX_START = 4;
-    private static int ABS_HEIGHT_DIFF_HEURISTIC_INDEX = 5;
 
-
+    
     private ArrayList<Heuristic> heuristics = new ArrayList<>();
 
     // update these weights, negative for minimize, positive for maximize.
     // Probably doesn't matter since machine will slowly move it to the correct value
-    private double[] weights = {-0.5, 1, -0.5, -0.35, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2,
-            0.2, 0.2, 0.2, 0.2, 0.2};
+    private double[] weights = {0.5, 1, 0.5, 3};
 
 
     PlayerSkeleton() {
         // update these weights, negative for minimize, positive for maximize.
         // Probably doesn't matter since machine will slowly move it to the correct value
-        heuristics.add(new AvgHeightHeuristic(weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX]));
-        heuristics.add(new MaxHeightHeuristic(weights[HEIGHT_HEURISTIC_INDEX]));
-        heuristics.add(new RowsClearedHeuristic(weights[ROWS_CLEARED_HEURISTIC_INDEX]));
-        heuristics.add(new HolesHeuristic(weights[HOLES_HEURISTIC_INDEX]));
-        heuristics.add(new absoluteDiffHeuristic(weights[ABS_HEIGHT_DIFF_HEURISTIC_INDEX]));
+        heuristics.add(new MaxHeightHeuristic());
+        heuristics.add(new RowsClearedHeuristic());
+        heuristics.add(new AvgHeightHeuristic());
+        heuristics.add(new HolesHeuristic());
+
         // column heuristics
 //        for (int i = 0; i < State.COLS; i++) {
-//            heuristics.add(new ColumnHeuristic(weights[COL_HEIGHT_HEURISTIC_INDEX_START + i], i));
+//            heuristics.add(new ColumnHeuristic());
 //        }
     }
 
@@ -53,8 +46,9 @@ public class PlayerSkeleton {
 
     private double valueFunction(StateCopy s) {
         double value = 0;
+        int i = 0;
         for (Heuristic heuristic: heuristics) {
-            value += heuristic.run(s);
+            value += weights[i++] * heuristic.run(s);
         }
 
         return value;
@@ -222,6 +216,13 @@ class StateCopy {
         return pTop;
     }
 
+    public static final int getCols() {
+        return COLS;
+    }
+
+    public static final int getRows() {
+        return ROWS;
+    }
 
     public int getNextPiece() {
         return nextPiece;
@@ -346,13 +347,9 @@ interface Heuristic {
     double getDerivative(StateCopy bef, StateCopy aft);
 }
 
+
+// MAXIMIZE - RETURN POSITIVE
 class RowsClearedHeuristic implements Heuristic {
-    private double weight;
-
-    RowsClearedHeuristic(double weight) {
-        this.weight = weight;
-    }
-
 
     public double run(StateCopy s) {
         return s.getRowsCleared();
@@ -363,20 +360,15 @@ class RowsClearedHeuristic implements Heuristic {
     }
 }
 
+// MINIMIZE - RETURN NEGATIVE
 class MaxHeightHeuristic implements Heuristic {
-    private double weight;
-
-    MaxHeightHeuristic(double weight) {
-        this.weight = weight;
-    }
-
 
     public double run(StateCopy s) {
-        return weight * getMaxHeight(s);
+        return getMaxHeight(s);
     }
 
     public double getDerivative(StateCopy bef, StateCopy aft) {
-        return weight * getMaxHeight(aft);
+        return getMaxHeight(aft);
     }
 
     private int getMaxHeight(StateCopy s) {
@@ -388,16 +380,12 @@ class MaxHeightHeuristic implements Heuristic {
                 maxHeight = height;
             }
         }
-        return maxHeight;
+        return -(maxHeight);
     }
 }
 
+// MINIMIZE - RETURN NEGATIVE
 class AvgHeightHeuristic implements  Heuristic {
-    private double weight;
-
-    AvgHeightHeuristic(double weight) {
-        this.weight = weight;
-    }
 
     public double run(StateCopy s) {
         int[] prevTop = s.getPreviousTop();
@@ -410,7 +398,7 @@ class AvgHeightHeuristic implements  Heuristic {
             heightIncrease += top[i] - prevTop[i];
         }
         // System.out.println("weight is: " + weight);
-        return weight * (heightIncrease / length);
+        return -(heightIncrease / length);
     }
 
     public double getDerivative(StateCopy bef, StateCopy aft) {
@@ -424,17 +412,13 @@ class AvgHeightHeuristic implements  Heuristic {
             heightIncrease += top[i] - prevTop[i];
         }
 
-        return weight * (heightIncrease / length);
+        return (heightIncrease / length);
     }
 }
 
+
+// MINIMIZE - RETURN NEGATIVE
 class HolesHeuristic implements Heuristic {
-    private double weight;
-
-    HolesHeuristic(double weight) {
-        this.weight = weight;
-    }
-
     public double run(StateCopy s) {
         int[][] field = s.getField();
         int[] top = s.getTop();
@@ -449,7 +433,7 @@ class HolesHeuristic implements Heuristic {
             }
         }
 
-        return weight * numOfHoles;
+        return -(numOfHoles);
     }
 
     public double getDerivative(StateCopy bef, StateCopy aft) {
@@ -458,17 +442,15 @@ class HolesHeuristic implements Heuristic {
 }
 
 class ColumnHeuristic implements Heuristic {
-    private double weight;
     private int index;
 
-    ColumnHeuristic(double weight, int index) {
-        this.weight = weight;
+    ColumnHeuristic(int index) {
         this.index = index;
     }
 
     public double run(StateCopy s) {
         int[] tops = s.getTop();
-        return weight * tops[index];
+        return tops[index];
     }
 
     public double getDerivative(StateCopy bef, StateCopy aft) {
@@ -476,15 +458,11 @@ class ColumnHeuristic implements Heuristic {
     }
 }
 
+
 /**
  * reduces the overall "bumpiness" of the top layer
  */
 class absoluteDiffHeuristic implements Heuristic {
-    private double weight;
-
-    absoluteDiffHeuristic(double weight){
-        this.weight = weight;
-    }
 
     public double run(StateCopy s) {
         //implement heuristics
@@ -495,7 +473,50 @@ class absoluteDiffHeuristic implements Heuristic {
             absDiff += Math.abs(top[i] - top[i + 1]);
         }
 
-        return weight * absDiff * -1;
+        return -1(absDiff);
+    }
+
+    public double getDerivative(StateCopy bef, StateCopy aft) {
+        return run(aft);
+    }
+}
+
+class HolesHeuristic implements Heuristic {
+
+  public double run(StateCopy s) {
+        int[][] field = s.getField();
+        int[] tops = s.getTop();
+        
+        int numOfHoles = 0;
+        int cols = s.getCols();
+        
+        for(int c = 0; c < cols; c++) {
+            int r = tops[c]-2; 
+            
+            for(r; r >= 0; r--) {
+                if(field[r][c] == 0)
+                    numOfHoles++;
+            }           
+        }
+        
+        return -(numOfHoles);
+  }
+  
+  public double getDerivative(StateCopy bef, StateCopy aft) {
+        return run(aft);
+    }
+}
+
+class ColumnHeuristic implements Heuristic {
+    private int index;
+
+    ColumnHeuristic(int index) {
+        this.index = index;
+    }
+
+    public double run(StateCopy s) {
+        int[] tops = s.getTop();
+        return tops[index];
     }
 
     public double getDerivative(StateCopy bef, StateCopy aft) {

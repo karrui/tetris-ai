@@ -12,9 +12,9 @@ public class TrainPlayerSkeleton {
     private double[] weights = {0.0000001, 0.0000001, 0.0000001};
 
     TrainPlayerSkeleton() {
-        heuristics.add(new AvgHeightHeuristic(weights[AVG_HEIGHT_INCREASE_HEURISTIC_INDEX]));
-        heuristics.add(new MaxHeightHeuristic(weights[HEIGHT_HEURISTIC_INDEX]));
-        heuristics.add(new RowsClearedHeuristic(weights[ROWS_CLEARED_HEURISTIC_INDEX]));
+        heuristics.add(new AvgHeightHeuristic());
+        heuristics.add(new MaxHeightHeuristic());
+        heuristics.add(new RowsClearedHeuristic());
     }
 
 
