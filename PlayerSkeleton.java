@@ -20,9 +20,9 @@ public class PlayerSkeleton {
         heuristics.add(new HolesHeuristic());
 
         // column heuristics
-//        for (int i = 0; i < State.COLS; i++) {
-//            heuristics.add(new ColumnHeuristic());
-//        }
+        //        for (int i = 0; i < State.COLS; i++) {
+        //            heuristics.add(new ColumnHeuristic());
+        //        }
     }
 
 
@@ -448,5 +448,39 @@ class ColumnHeuristic implements Heuristic {
 
     public double getDerivative(StateCopy bef, StateCopy aft) {
         return run(aft);
+    }
+}
+
+class RowTransitionsHeuristic implements Heuristic {
+    public double run(StateCopy s) {
+        int[][] field = s.getField;
+        int maxRow = getMaxHeight(s);
+        int rowTransitions = 0;
+        
+        for(int r = 0; r < maxRow; r++) {
+            int tmp1 = field[r][0];
+            int tmp2 = field[r][1];
+            
+            for(int c = 1; c < State.COLS; c++) {
+                if((tmp1 == 0 || tmp2 == 0) && (tmp1 != 0 || tmp2 != 0)) {
+                    rowTransitions++;
+                }
+                tmp1 = tmp2;
+                tmp2 = field[r][c+1];
+            }
+        }
+            
+    }
+    
+    private int getMaxHeight(StateCopy s) {
+        int[] top = s.getTop();
+        int maxHeight = 0;
+
+        for (int height : top) {
+            if (maxHeight < height) {
+                maxHeight = height;
+            }
+        }
+        return maxHeight;
     }
 }
