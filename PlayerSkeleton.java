@@ -1,3 +1,4 @@
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -100,6 +101,8 @@ class StateCopy {
 
     private boolean lost;
 
+    public TLabel label;
+
     //current turn
     private int turn;
     private int cleared;    // this variable actually keeps track of all the rows cleared so far in game
@@ -118,7 +121,7 @@ class StateCopy {
 
 
     //number of next piece
-    private int nextPiece;
+    protected int nextPiece;
 
 
     //all legal moves - first index is piece type - then a list of 2-length arrays
@@ -324,6 +327,60 @@ class StateCopy {
             }
         }
         return true;
+    }
+
+    public void draw() {
+        label.clear();
+        label.setPenRadius();
+        //outline board
+        label.line(0, 0, 0, ROWS+5);
+        label.line(COLS, 0, COLS, ROWS+5);
+        label.line(0, 0, COLS, 0);
+        label.line(0, ROWS-1, COLS, ROWS-1);
+
+        //show bricks
+
+        for(int c = 0; c < COLS; c++) {
+            for(int r = 0; r < top[c]; r++) {
+                if(field[r][c] != 0) {
+                    drawBrick(c,r);
+                }
+            }
+        }
+
+        for(int i = 0; i < COLS; i++) {
+            label.setPenColor(Color.red);
+            label.line(i, top[i], i+1, top[i]);
+            label.setPenColor();
+        }
+
+        label.show();
+
+
+    }
+
+    public static final Color brickCol = Color.gray;
+
+    private void drawBrick(int c, int r) {
+        label.filledRectangleLL(c, r, 1, 1, brickCol);
+        label.rectangleLL(c, r, 1, 1);
+    }
+
+    public void drawNext(int slot, int orient) {
+        for(int i = 0; i < pWidth[nextPiece][orient]; i++) {
+            for(int j = pBottom[nextPiece][orient][i]; j <pTop[nextPiece][orient][i]; j++) {
+                drawBrick(i+slot, j+ROWS+1);
+            }
+        }
+        label.show();
+    }
+
+    //visualization
+    //clears the area where the next piece is shown (top)
+    public void clearNext() {
+        label.filledRectangleLL(0, ROWS+.9, COLS, 4.2, TLabel.DEFAULT_CLEAR_COLOR);
+        label.line(0, 0, 0, ROWS+5);
+        label.line(COLS, 0, COLS, ROWS+5);
     }
 
 }
