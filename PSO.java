@@ -31,5 +31,5 @@ public class PSO {
 
     // ok we need particle array for the first for loop
     public Particle[] particles;
-    public double[] bestGlobal = new double[2];
+    public double[] bestGlobalPosition = new double[2];
 }
