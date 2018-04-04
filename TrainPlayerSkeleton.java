@@ -1,20 +1,36 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class TrainPlayerSkeleton {
     private static int HEIGHT_HEURISTIC_INDEX = 0;
     private static int ROWS_CLEARED_HEURISTIC_INDEX = 1;
     private static int AVG_HEIGHT_INCREASE_HEURISTIC_INDEX = 2;
+    private static int HOLES_HEURISTIC_INDEX = 3;
 
     private ArrayList<Heuristic> heuristics = new ArrayList<>();
 
     // Machine will learn and update these weights via TD algorithm.
     // Weights are arbitrarily initialised to 0.0, negative for minimize, positive for maximize.
-    private double[] weights = {0.0000001, 0.0000001, 0.0000001};
+    // private double[] weights = {0.0000001, 0.0000001, 0.0000001, 0.0000001, 0.0000001, 0.0000001, 0.0000001, 0.0000001
+    //        , 0.0000001, 0.0000001, 0.0000001, 0.0000001, 0.0000001};
+    private double[] weights = {0.0000001, 000000.1, 0.0000001};
 
     TrainPlayerSkeleton() {
         heuristics.add(new AvgHeightHeuristic());
         heuristics.add(new MaxHeightHeuristic());
         heuristics.add(new RowsClearedHeuristic());
+        /**
+        heuristics.add(new ColumnHeuristic(0));
+        heuristics.add(new ColumnHeuristic(1));
+        heuristics.add(new ColumnHeuristic(2));
+        heuristics.add(new ColumnHeuristic(3));
+        heuristics.add(new ColumnHeuristic(4));
+        heuristics.add(new ColumnHeuristic(5));
+        heuristics.add(new ColumnHeuristic(6));
+        heuristics.add(new ColumnHeuristic(7));
+        heuristics.add(new ColumnHeuristic(8));
+        heuristics.add(new ColumnHeuristic(9));
+        */
     }
 
 
@@ -49,13 +65,17 @@ public class TrainPlayerSkeleton {
 
     // This is the real main(), so you can run non-static;
     private void execute() {
-        State s = new State();
         TrainPlayerSkeleton p = new TrainPlayerSkeleton();
-        for (int i = 0; i < 1000000; i ++) {
+        for (int i = 0; i < 100000; i ++) {
+            State s = new State();
+            new TFrame(s);
             while (!s.hasLost()) {
                 StateCopy befMove = new StateCopy(s);
-                s.makeMove(p.pickMove(s, s.legalMoves()));
                 StateCopy aftMove = new StateCopy(s);
+                aftMove.makeMove(p.pickMove(s, s.legalMoves()));
+                s.makeMove(p.pickMove(s, s.legalMoves()));
+                s.draw();
+                s.drawNext(0, 0);
 
                 /**
                  * update weights
@@ -64,19 +84,31 @@ public class TrainPlayerSkeleton {
                  */
                 int j = 0;
                 for (Heuristic heuristic: heuristics) {
-                    weights[j] += (0.0001 * (aftMove.getRowsCleared() + 1.0 * valueFunction(aftMove) - valueFunction(befMove))
-                            * heuristic.run(befMove));
+                    if (!s.hasLost()) {
+                        weights[j] += (0.001 * (aftMove.getRowsCleared() + 1.0 * valueFunction(aftMove) - valueFunction(befMove))
+                                * heuristic.getDerivative(befMove, aftMove)) - 0.002;
+                    }
+                    else {
+                        weights[j] += (0.001 * (aftMove.getRowsCleared() + 1.0 * aftMove.getTotalRowsCleared() - befMove.getTotalRowsCleared())
+                                * heuristic.getDerivative(befMove, aftMove));
+                    }
                     j++;
                 }
                 try {
-                    Thread.sleep(1);
+                    Thread.sleep(300);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
             System.out.println("You have completed " + s.getRowsCleared() + " rows.");
+            System.out.println(weights[0] + " " + weights[1] + " " + weights[2]);
+            /**
+            System.out.println(weights[0] + " " + weights[1] + " " + weights[2] + " " + weights[3] + " " + weights[4] + " " + weights[5] +
+                    " " + weights[6] + " " + weights[7] + " " + weights[8] + " " + weights[9] + " " + weights[10] + " " +
+                    weights[11] +  " " + weights[12]);
+             */
         }
-        System.out.println(weights[0] + " " + weights[1] + " " + weights[2]);
+        // System.out.println(weights[0] + " " + weights[1] + " " + weights[2]);
     }
 
 
