@@ -1,3 +1,5 @@
+import com.sun.org.apache.bcel.internal.generic.POP;
+
 public class PSO {
     /**
      * (Copied from Wikipedia to aid me in understanding PSO. Let's go PJ.)
@@ -20,9 +22,12 @@ public class PSO {
      */
 
     // for these values, we start with a small number then play with it to find the idea
-    public static final int POP = 16;
+    public static final int POPULATION = 16;
+    // the naming convention may be a bit confusing but consider that the number of games is our training,
+    // whereas the number of iterations is a termination algorithm
     public static final int NUMGAMES = 50;
     public static final int NUMITERATIONS = 100;
+    public static final int NUMHEURISTICS = PlayerSkeleton.NUMHEURISTICS;
 
     // Parameters (to be fine tuned later)
     public static double OMEGA = 0.001;
@@ -31,5 +36,47 @@ public class PSO {
 
     // ok we need particle array for the first for loop
     public Particle[] particles;
-    public double[] bestGlobalPosition = new double[2];
+    public double[] bestGlobalPosition;
+
+    /**
+     * Constructor for PSO class. We create the particles in this class and initialise the particles' position with
+     * an uniformly distributed random vector.
+     */
+    public PSO() {
+        particles = new Particle[POPULATION];
+        bestGlobalPosition = new double[NUMHEURISTICS];
+        // initialise the positions of the particles with random values, then set the best known positions
+        // of each particle as their beginning position
+        for (int i = 0; i < POPULATION; i++) {
+            particles[i] = new Particle(NUMITERATIONS, NUMHEURISTICS);
+            particles[i].initialisePosition(NUMHEURISTICS);
+            particles[i].initialiseBestKnownPosition();
+            particles[i].initialiseVelocity();
+            // supposed to have if cost function of current position for this particle < cost function of global best
+            // position, update global best function to this particle's cost function.
+            // Not sure how to write this yet. Should I just write value function?
+        }
+    }
+
+    // this is a very rudimentary implementation of PSO, I'm following the Wikipedia article here and seeing if
+    // it works or not. Right now I am having some issue with array index out of bounds, please feel free to help if possible.
+    public void run() {
+        PlayerSkeleton p = new PlayerSkeleton();
+        for (int i = 0; i < NUMGAMES; i++) {
+            for (int j = 0; j < NUMITERATIONS; j++) {
+                State s = new State();
+                StateCopy copy = new StateCopy(s);
+                for (int k = 0; k < POPULATION; k++) {
+                    p.updateWeights(particles[k].getBestKnownPosition());
+                    while(!s.hasLost()) {
+                        s.makeMove(p.pickMove(s,s.legalMoves()));
+                        copy.makeMove(p.pickMove(s, s.legalMoves()));
+                    }
+                }
+                System.out.println("Fitness for this game is: " + p.valueFunction(copy));
+            }
+        }
+    }
+
+//    public double calculateFitness
 }

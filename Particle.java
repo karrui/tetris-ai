@@ -1,4 +1,4 @@
-import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Particle {
 
@@ -21,6 +21,11 @@ public class Particle {
         fitnessOverall = Double.NEGATIVE_INFINITY;
     }
 
+    // initialise
+    public void initialisePosition(int numHeuristics) {
+        Arrays.fill(position, Math.random());
+    }
+
     // accessors
     public double[] getPosition() {
         return position;
@@ -28,5 +33,33 @@ public class Particle {
 
     public double[] getBestKnownPosition() {
         return bestKnownPosition;
+    }
+
+    public double getFitnessHere() {
+        return fitnessHere;
+    }
+
+    public double getFitnessOverall() {
+        return fitnessOverall;
+    }
+
+    // mutators
+    public void initialiseVelocity() {
+        Arrays.fill(velocity, 0.0); // initialised to 0 according to ResearchGate
+    }
+    public void initialiseBestKnownPosition() {
+        bestKnownPosition = position.clone();
+    }
+    public void setBestKnownPosition(double[] best) {
+        bestKnownPosition = best.clone();
+    }
+
+    public void updateFitnessHistory(int idx, double fitness) {
+        fitnessHistory[idx] = fitness;
+    }
+
+    public double computeAvgFitness() {
+        return 0.0; // not sure how to implement this method yet because I don't know what's the point of it
+
     }
 }
