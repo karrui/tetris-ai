@@ -444,8 +444,11 @@ class ColumnTransitionsHeuristic implements  Heuristic {
         int colTransitions = 0;
 
         for (int c = 0; c < State.COLS; c++) {
-            boolean priorCellFilled = true;
-            for (int r = 0; r < top[c]; r++) {
+            boolean priorCellFilled = false;
+            if (field[0][c] != 0) {
+                priorCellFilled = true;
+            }
+            for (int r = 1; r < top[c]; r++) {
                 boolean currCellFilled = false;
                 if (field[r][c] != 0) {
                     currCellFilled = true;
