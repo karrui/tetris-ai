@@ -1,12 +1,16 @@
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class PlayerSkeleton {
 
     static final int NUM_HEURISTICS = 7;
 
     // config booleans
-    private static boolean isTraining = false;
+    private static boolean isTraining = true;
     private static boolean isHeadless = false;
 
     static String TRAINED_WEIGHTS = "weights.txt";
@@ -589,7 +593,7 @@ class AbsoluteDiffHeuristic implements Heuristic {
  * Not multithreaded yet
  * =============================================================================================================
  */
-class PSO {
+class PSO implements Runnable {
     static int UPPERBOUND_VELOCITY = 5;
     static int LOWERBOUND_VELOCITY = -5;
     static int RANGE_VELOCITY = UPPERBOUND_VELOCITY - LOWERBOUND_VELOCITY;
@@ -601,6 +605,7 @@ class PSO {
     static int NUM_HEURISTICS = PlayerSkeleton.NUM_HEURISTICS;
     static int NUM_PARTICLES = 10;  // general rule of thumb seems to be n < N < 2n, where n = numHeuristics
     static int NUM_ITERATIONS = 100;
+    static int NUM_THREADS = 10;
 
     boolean hasWeightsFromFile = false;
 
@@ -611,6 +616,11 @@ class PSO {
 
     private int globalBest;
     private double[] globalBestPositions = new double[NUM_HEURISTICS];
+
+    private final ExecutorService executor;
+    private final List <Future<Integer>> list;
+
+    private int[] scoreForAll;
 
     public PSO() {
 
@@ -629,6 +639,9 @@ class PSO {
                 e.printStackTrace();
             }
         }
+
+        executor = Executors.newFixedThreadPool(NUM_THREADS);
+        list = new ArrayList<Future<Integer>>();
 
         globalBest = 0;
         createSwarm();
@@ -659,9 +672,35 @@ class PSO {
 
     // main method
     public void run() {
+        // to store all the scores for all the particles per iteration
+        scoreForAll = new int[NUM_PARTICLES];
+        Arrays.fill(scoreForAll, 0);
+
         for (int i = 0; i < NUM_ITERATIONS; i++) {
+            // multi-threaded approach
+            Collection<Callable<Integer>> jobs = new ArrayList<Callable<Integer>>();
+            // add all the particles for evaluation first and let them run via multiple threads
             for (Particle particle : particles) {
-                int score = evaluate(particle);
+                // jobs.add(Callable<evaluate(particle)>);
+                Future<Integer> future = executor.submit(new Evaluate(particle));
+                list.add(future);
+            }
+            // executor.invokeAll();
+            // Now copy all the scores from the list of futures to our score array
+            int j = 0;
+            for (Future<Integer> fut : list) {
+                try {
+                    scoreForAll[j] = fut.get();
+                    j++;
+                } catch (Exception e) {
+                    System.out.println("I also don't know what to put here");
+                }
+            }
+            int k = 0;
+            for (Particle particle : particles) {
+                // keep all the scores in an array, then let the particle access it.
+                int score = scoreForAll[k];
+                // int score = evaluate(particle);
                 particle.updatePersonalBest(score);
                 if (score > globalBest) {
                     globalBest = score;
@@ -670,7 +709,11 @@ class PSO {
 
                 particle.updateVelocity(globalBestPositions, RANGE_VELOCITY);
                 particle.updatePosition(UPPERBOUND_POSITION, LOWERBOUND_POSITION);
+                k++; // to get correct particle position
             }
+
+            // clear array list to make sure we don't repeat values
+            list.clear();
 
             // Log details
             System.out.printf("Iteration %d globalBest: %d\n", i, globalBest);
@@ -712,7 +755,7 @@ class PSO {
 
     }
 
-    private int evaluate(Particle particle) {
+    private Integer evaluate(Particle particle) {
         PlayerSkeleton trainPlayerSkeleton = new PlayerSkeleton();
         State state = new State();
 
@@ -721,6 +764,28 @@ class PSO {
         return PlayerSkeleton.train(state, trainPlayerSkeleton);    // this will return rows cleared
     }
 
+}
+
+class Evaluate implements Callable<Integer> {
+
+    Particle particle;
+
+    Evaluate(Particle particle) {
+        this.particle = particle;
+    }
+
+    public Integer call() throws Exception {
+        try {
+            PlayerSkeleton trainPlayerSkeleton = new PlayerSkeleton();
+            State state = new State();
+
+            trainPlayerSkeleton.updateWeights(particle.getPosition());
+            return PlayerSkeleton.train(state, trainPlayerSkeleton);    // this will return rows cleared
+        } catch (Exception e) {
+            return -1; // error
+        }
+
+    }
 }
 
 
