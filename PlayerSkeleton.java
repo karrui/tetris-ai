@@ -1,19 +1,44 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 public class PlayerSkeleton {
+
+    private static final int NUM_HEURISTICS = 6;
+
+    // config booleans
+    private static boolean isTraining = false;
+    private static boolean isHeadless = true;
+
+    private static String TRAINED_WEIGHTS = "./weights.csv";
 
     
     private ArrayList<Heuristic> heuristics = new ArrayList<>();
 
     // update these weights, negative for minimize, positive for maximize.
     // Probably doesn't matter since machine will slowly move it to the correct value
-    private double[] weights = {4, 3, 0.5, 3, 3, 3};
+    private double[] weights;
 
 
     PlayerSkeleton() {
-        // update these weights, negative for minimize, positive for maximize.
-        // Probably doesn't matter since machine will slowly move it to the correct value
+        weights = new double[NUM_HEURISTICS];
+
+        if (!isTraining) {
+            // read in the trained weights into our weights array
+            try {
+                BufferedReader bufferedReader = new BufferedReader(new FileReader(TRAINED_WEIGHTS));
+                String line;
+                int i = 0;
+                while ((line = bufferedReader.readLine()) != null) {
+                    weights[i++] = Double.parseDouble(line);
+                }
+                bufferedReader.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         heuristics.add(new MaxHeightHeuristic());
         heuristics.add(new RowsClearedHeuristic());
         heuristics.add(new AvgHeightHeuristic());
@@ -62,20 +87,30 @@ public class PlayerSkeleton {
 
     // This is the real main(), so you can run non-static;
     private void execute() {
-        State s = new State();
-        new TFrame(s);
-        PlayerSkeleton p = new PlayerSkeleton();
-        while (!s.hasLost()) {
-            s.makeMove(p.pickMove(s, s.legalMoves()));
-            s.draw();
-            s.drawNext(0, 0);
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        if (!isTraining) {
+            State s = new State();
+            if (!isHeadless) {
+                new TFrame(s);
             }
+            PlayerSkeleton p = new PlayerSkeleton();
+            while (!s.hasLost()) {
+                s.makeMove(p.pickMove(s, s.legalMoves()));
+                if (!isHeadless) {
+                    s.draw();
+                    s.drawNext(0, 0);
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            System.out.println("You have completed " + s.getRowsCleared() + " rows.");
+        } else {
+            PSO swarm = new PSO();
+            swarm.run();
         }
-        System.out.println("You have completed " + s.getRowsCleared() + " rows.");
     }
 
 
@@ -352,7 +387,9 @@ interface Heuristic {
 }
 
 
-// MAXIMIZE - RETURN POSITIVE
+/**
+ * Returns the number of rows cleared by the piece
+ */
 class RowsClearedHeuristic implements Heuristic {
 
     public double run(StateCopy s) {
@@ -360,7 +397,9 @@ class RowsClearedHeuristic implements Heuristic {
     }
 }
 
-// MINIMIZE - RETURN NEGATIVE
+/**
+ * Returns the maximum height of the board when the piece is placed
+ */
 class MaxHeightHeuristic implements Heuristic {
 
     public double run(StateCopy s) {
@@ -376,11 +415,14 @@ class MaxHeightHeuristic implements Heuristic {
                 maxHeight = height;
             }
         }
-        return -(maxHeight);
+        return maxHeight;
     }
 }
 
-// MINIMIZE - RETURN NEGATIVE
+/**
+ * Returns the average height of the board when the piece is placed
+ * Average height is calculated by the total sum of the column heights divided by number of columns
+ */
 class AvgHeightHeuristic implements  Heuristic {
 
     public double run(StateCopy s) {
@@ -394,12 +436,14 @@ class AvgHeightHeuristic implements  Heuristic {
             heightIncrease += top[i] - prevTop[i];
         }
         // System.out.println("weight is: " + weight);
-        return -(heightIncrease / length);
+        return heightIncrease / length;
     }
 }
 
 
-// MINIMIZE - RETURN NEGATIVE
+/**
+ * Returns the number of holes in the board when the piece is placed
+ */
 class HolesHeuristic implements Heuristic {
     public double run(StateCopy s) {
         int[][] field = s.getField();
@@ -415,11 +459,14 @@ class HolesHeuristic implements Heuristic {
             }
         }
 
-        return -(numOfHoles);
+        return numOfHoles;
     }
 }
 
-// MINIMIZE - NEGATIVE
+/**
+ * Returns the number of column transitions when the piece is placed
+ * A column transition occurs when an empty cell is adjacent to a filled cell on the same column and vice versa.
+ */
 class ColumnTransitionsHeuristic implements  Heuristic {
     public double run(StateCopy s) {
         int[][] field = s.getField();
@@ -446,29 +493,13 @@ class ColumnTransitionsHeuristic implements  Heuristic {
             }
         }
 
-        return -(colTransitions);
-    }
-}
-
-class ColumnHeuristic implements Heuristic {
-    private int index;
-
-    ColumnHeuristic(int index) {
-        this.index = index;
-    }
-
-    public double run(StateCopy s) {
-        int[] tops = s.getTop();
-        return tops[index];
-    }
-
-    public double getDerivative(StateCopy bef, StateCopy aft) {
-        return run(aft);
+        return colTransitions;
     }
 }
 
 /**
- * reduces the overall "bumpiness" of the top layer
+ * Returns the absolute height different amongst all columns
+ * This heuristic aims to reduce the overall "bumpiness" of the top layer
  */
 class AbsoluteDiffHeuristic implements Heuristic {
 
@@ -481,6 +512,80 @@ class AbsoluteDiffHeuristic implements Heuristic {
             absDiff += Math.abs(top[i] - top[i + 1]);
         }
 
-        return -(absDiff);
+        return absDiff;
+    }
+}
+
+/**
+ * This class contains the particle swarm optimizer algorithm to help us get the best weights for the heuristics
+ */
+class PSO {
+    void run() {
+        System.out.println("Running PSO");
+    }
+}
+
+
+class Particle {
+
+    // |h| dimension matrix for the position, best known position and velocity.
+    // We can also understand the bestKnownSolution as ideally the "solution" to the problem.
+    private double[] position;
+    private double[] bestKnownPosition;
+    private double[] velocity;
+
+    private double fitnessHere; // fitness for this iteration
+    private double fitnessOverall; // best fitness among all iterations so far
+    private double[] fitnessHistory;
+
+    public Particle(int numIterations, int numHeuristics) {
+        position = new double[numHeuristics];
+        bestKnownPosition = new double[numHeuristics];
+        velocity = new double[numHeuristics];
+
+        fitnessHistory = new double[numIterations];
+        fitnessOverall = Double.NEGATIVE_INFINITY;
+    }
+
+    // initialise
+    public void initialisePosition(int numHeuristics) {
+        Arrays.fill(position, Math.random());
+    }
+
+    // accessors
+    public double[] getPosition() {
+        return position;
+    }
+
+    public double[] getBestKnownPosition() {
+        return bestKnownPosition;
+    }
+
+    public double getFitnessHere() {
+        return fitnessHere;
+    }
+
+    public double getFitnessOverall() {
+        return fitnessOverall;
+    }
+
+    // mutators
+    public void initialiseVelocity() {
+        Arrays.fill(velocity, 0.0); // initialised to 0 according to ResearchGate
+    }
+    public void initialiseBestKnownPosition() {
+        bestKnownPosition = position.clone();
+    }
+    public void setBestKnownPosition(double[] best) {
+        bestKnownPosition = best.clone();
+    }
+
+    public void updateFitnessHistory(int idx, double fitness) {
+        fitnessHistory[idx] = fitness;
+    }
+
+    public double computeAvgFitness() {
+        return 0.0; // not sure how to implement this method yet because I don't know what's the point of it
+
     }
 }
