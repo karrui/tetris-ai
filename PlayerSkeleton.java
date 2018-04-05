@@ -1,18 +1,15 @@
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.io.*;
+import java.util.*;
 
 public class PlayerSkeleton {
 
-    private static final int NUM_HEURISTICS = 6;
+    static final int NUM_HEURISTICS = 6;
 
     // config booleans
-    private static boolean isTraining = false;
+    private static boolean isTraining = true;
     private static boolean isHeadless = true;
 
-    private static String TRAINED_WEIGHTS = "./weights.csv";
+    static String TRAINED_WEIGHTS = "weights.txt";
 
     
     private ArrayList<Heuristic> heuristics = new ArrayList<>();
@@ -113,17 +110,29 @@ public class PlayerSkeleton {
         }
     }
 
+    // training method, feels recursive as hell
+    public static int train(State s, PlayerSkeleton p) {
+        while(!s.hasLost()) {
+            s.makeMove(p.pickMove(s, s.legalMoves()));
+        }
+        return s.getRowsCleared();
+    }
+
 
     public static void main(String[] args) {
         PlayerSkeleton ps = new PlayerSkeleton();
         ps.execute();
     }
 
+    public void updateWeights(double[] newWeights) {
+        weights = ArrayHelper.deepCopy(newWeights);
+    }
 }
 
-
 /**
+ * =====================================================================================
  * Deep copy of State class to apply moves without touching the real {@link State} class
+ * =====================================================================================
  */
 @SuppressWarnings("Duplicates")
 class StateCopy {
@@ -364,6 +373,12 @@ class StateCopy {
 
 }
 
+
+/**
+ * =============================
+ * Utility class to clone arrays
+ * =============================
+ */
 class ArrayHelper {
     // Helper method to clone 2d int array instead of reference
     static int[][] deepCopy(int[][] src) {
@@ -379,9 +394,28 @@ class ArrayHelper {
     static int[] deepCopy(int[] src) {
         return src.clone();
     }
+
+    // Helper method to clone 2d int array instead of reference
+    static double[][] deepCopy(double[][] src) {
+        int length = src.length;
+        double[][] dest = new double[length][src[0].length];
+        for (int i = 0; i < length; i++) {
+            System.arraycopy(src[i], 0, dest[i], 0, src[i].length);
+        }
+        return dest;
+    }
+
+    // Overloaded helper method to clone 1d int array instead of reference
+    static double[] deepCopy(double[] src) {
+        return src.clone();
+    }
 }
 
-
+/**
+ * ==========================================================
+ * Interface to encapsulate heuristics used for the Tetris AI
+ * ==========================================================
+ */
 interface Heuristic {
     double run(StateCopy s);
 }
@@ -517,75 +551,207 @@ class AbsoluteDiffHeuristic implements Heuristic {
 }
 
 /**
+ * =============================================================================================================
  * This class contains the particle swarm optimizer algorithm to help us get the best weights for the heuristics
+ * Not multithreaded yet
+ * =============================================================================================================
  */
 class PSO {
-    void run() {
-        System.out.println("Running PSO");
+    static int UPPERBOUND_VELOCITY = 5;
+    static int LOWERBOUND_VELOCITY = -5;
+    static int RANGE_VELOCITY = UPPERBOUND_VELOCITY - LOWERBOUND_VELOCITY;
+
+    static int UPPERBOUND_POSITION = 10;
+    static int LOWERBOUND_POSITION = -10;
+    static int RANGE_POSITION = UPPERBOUND_POSITION - LOWERBOUND_POSITION;
+
+    static int NUM_HEURISTICS = PlayerSkeleton.NUM_HEURISTICS;
+    static int NUM_PARTICLES = 10;  // general rule of thumb seems to be n < N < 2n, where n = numHeuristics
+    static int NUM_ITERATIONS = 100;
+
+    boolean hasWeightsFromFile = false;
+
+    private static String LOG_FILE = "./t_weights_log.txt";
+    private static String TRAINED_WEIGHTS = "./trained_weights.txt";
+
+    private static Particle[] particles;
+
+    private int globalBest;
+    private double[] globalBestPositions = new double[NUM_HEURISTICS];
+
+    public PSO() {
+
+        File f = new File(TRAINED_WEIGHTS);
+        if(f.exists() && !f.isDirectory()) {
+            try {
+                hasWeightsFromFile = true;
+                BufferedReader bufferedReader = new BufferedReader(new FileReader(f));
+                String line;
+                int i = 0;
+                while ((line = bufferedReader.readLine()) != null) {
+                    globalBestPositions[i++] = Double.parseDouble(line);
+                }
+                bufferedReader.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        globalBest = 0;
+        createSwarm();
     }
+
+    private void createSwarm() {
+        Random random = new Random();
+        particles = new Particle[NUM_PARTICLES];
+        for (int i = 0; i < NUM_PARTICLES; i++) {
+            double[] fitness = new double[NUM_HEURISTICS];
+            double[] velocity = new double[NUM_HEURISTICS];
+            for (int j = 0; j < NUM_HEURISTICS; j++) {
+                // generate random fitness if no current weights
+                if (hasWeightsFromFile) {
+                    fitness[j] = globalBestPositions[j];
+                } else {
+                    fitness[j] = random.nextDouble() * RANGE_POSITION;
+                }
+                // generate random velocity
+                velocity[j] = random.nextDouble() * RANGE_VELOCITY;
+                if (random.nextDouble() > 0.5) {    // velocity has 50/50 of being positive or negative
+                    velocity[j] *= -1;
+                }
+            }
+            particles[i] = new Particle(fitness, velocity);
+        }
+    }
+
+    // main method
+    public void run() {
+        for (int i = 0; i < NUM_ITERATIONS; i++) {
+            for (Particle particle : particles) {
+                int score = evaluate(particle);
+                particle.updatePersonalBest(score);
+                if (score > globalBest) {
+                    globalBest = score;
+                    globalBestPositions = ArrayHelper.deepCopy(particle.getPosition());
+                }
+
+                particle.updateVelocity(globalBestPositions, RANGE_VELOCITY);
+                particle.updatePosition(UPPERBOUND_POSITION, LOWERBOUND_POSITION);
+            }
+
+            // Log details
+            System.out.printf("Iteration %d globalBest: %d\n", i, globalBest);
+            // Write to log file
+            try {
+                BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(LOG_FILE, true));
+                bufferedWriter.append("Iteration ").append(String.valueOf(i)).append(", Score: ").append(String.valueOf(globalBest)).append("\n");
+                bufferedWriter.append("======== Scores ========= \n");
+                for (double globalBestPosition : globalBestPositions) {
+                    bufferedWriter.append(String.valueOf(globalBestPosition)).append(" ");
+                }
+                bufferedWriter.append("\n");
+                bufferedWriter.flush();
+                bufferedWriter.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Best score for this training session here
+        System.out.println("Best result: " + globalBest);
+        for (double globalBestPosition : globalBestPositions) {
+            System.out.print(globalBestPosition + " ");
+        }
+        System.out.println();
+
+        // Write to trained_weights.txt
+        try {
+            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(TRAINED_WEIGHTS));
+            for (double globalBestPosition : globalBestPositions) {
+                bufferedWriter.append(String.valueOf(globalBestPosition)).append("\n");
+            }
+            bufferedWriter.flush();
+            bufferedWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    private int evaluate(Particle particle) {
+        PlayerSkeleton trainPlayerSkeleton = new PlayerSkeleton();
+        State state = new State();
+
+        trainPlayerSkeleton.updateWeights(particle.getPosition());
+
+        return PlayerSkeleton.train(state, trainPlayerSkeleton);    // this will return rows cleared
+    }
+
 }
 
 
+/**
+ * Particle for the {@link PSO} class
+ */
 class Particle {
 
-    // |h| dimension matrix for the position, best known position and velocity.
-    // We can also understand the bestKnownSolution as ideally the "solution" to the problem.
-    private double[] position;
-    private double[] bestKnownPosition;
-    private double[] velocity;
+    // Using values stated to be decent in
+    // https://pdfs.semanticscholar.org/94b5/2262c526dbe38919d53b4c15c81130a12c3e.pdf
+    //
+    static double INERTIA = 0.6571; //0.7298;
+    static double COGNITIVE_PARAMETER = 1.6319; // 1.49618;
+    static double SOCIAL_PARAMETER = 0.6239; //1.49618;
 
-    private double fitnessHere; // fitness for this iteration
-    private double fitnessOverall; // best fitness among all iterations so far
-    private double[] fitnessHistory;
+    double[] position;
+    double[] velocity;
 
-    public Particle(int numIterations, int numHeuristics) {
-        position = new double[numHeuristics];
-        bestKnownPosition = new double[numHeuristics];
-        velocity = new double[numHeuristics];
+    double personalBest;
+    double[] personalBestPositions;
 
-        fitnessHistory = new double[numIterations];
-        fitnessOverall = Double.NEGATIVE_INFINITY;
+    public Particle(double[] position, double[] velocity) {
+        personalBest = 0;
+        this.position = position;
+        this.velocity = velocity;
+        personalBestPositions = new double[position.length];
     }
 
-    // initialise
-    public void initialisePosition(int numHeuristics) {
-        Arrays.fill(position, Math.random());
+    // updates personalBest and personBestPosition if given score is better than current best
+    public void updatePersonalBest(double given) {
+        if (given > personalBest) {
+            personalBest = given;
+            personalBestPositions = ArrayHelper.deepCopy(position);
+        }
     }
 
-    // accessors
+    public void updateVelocity(double[] globalBestPositions, int range) {
+        Random random = new Random();
+        for (int i = 0; i < velocity.length; i++) {
+            velocity[i] = INERTIA * velocity[i]
+                        + COGNITIVE_PARAMETER * (personalBestPositions[i] - position[i]) * random.nextDouble()
+                        + SOCIAL_PARAMETER * (globalBestPositions[i] - position[i]) * random.nextDouble();
+            // check if velocity out of range
+            if (velocity[i] > range) {
+                velocity[i] = range;
+            } else if (velocity[i] < -range) {
+                velocity[i] = -range;
+            }
+        }
+    }
+
+    public void updatePosition(int upperBound, int lowerBound) {
+        for (int i = 0; i < position.length; i++) {
+            position[i] += velocity[i];
+            // check if position out of range
+            if (position[i] > upperBound) {
+                position[i] = upperBound;
+            } else if (position[i] < lowerBound) {
+                position[i] = lowerBound;
+            }
+        }
+    }
+
     public double[] getPosition() {
         return position;
-    }
-
-    public double[] getBestKnownPosition() {
-        return bestKnownPosition;
-    }
-
-    public double getFitnessHere() {
-        return fitnessHere;
-    }
-
-    public double getFitnessOverall() {
-        return fitnessOverall;
-    }
-
-    // mutators
-    public void initialiseVelocity() {
-        Arrays.fill(velocity, 0.0); // initialised to 0 according to ResearchGate
-    }
-    public void initialiseBestKnownPosition() {
-        bestKnownPosition = position.clone();
-    }
-    public void setBestKnownPosition(double[] best) {
-        bestKnownPosition = best.clone();
-    }
-
-    public void updateFitnessHistory(int idx, double fitness) {
-        fitnessHistory[idx] = fitness;
-    }
-
-    public double computeAvgFitness() {
-        return 0.0; // not sure how to implement this method yet because I don't know what's the point of it
-
     }
 }
