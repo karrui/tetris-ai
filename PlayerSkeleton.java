@@ -8,7 +8,7 @@ public class PlayerSkeleton {
 
     // update these weights, negative for minimize, positive for maximize.
     // Probably doesn't matter since machine will slowly move it to the correct value
-    private double[] weights = {0.5, 1, 0.5, 3};
+    private double[] weights = {0.5, 1, 0.5, 3, 3};
 
 
     PlayerSkeleton() {
@@ -18,6 +18,7 @@ public class PlayerSkeleton {
         heuristics.add(new RowsClearedHeuristic());
         heuristics.add(new AvgHeightHeuristic());
         heuristics.add(new HolesHeuristic());
+        heuristics.add(new RowTransitionsHeuristic());
 
         // column heuristics
         //        for (int i = 0; i < State.COLS; i++) {
@@ -469,7 +470,7 @@ class RowTransitionsHeuristic implements Heuristic {
                 tmp2 = field[r][c+1];
             }
         }
-        return rowTransitions;    
+        return -(rowTransitions);    
     }
     
     private int getMaxHeight(StateCopy s) {
