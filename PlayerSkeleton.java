@@ -776,6 +776,7 @@ class Evaluate implements Callable<Integer> {
 
     public Integer call() throws Exception {
         try {
+            // System.out.println("I think multi-threading is happening"); // check
             PlayerSkeleton trainPlayerSkeleton = new PlayerSkeleton();
             State state = new State();
 
