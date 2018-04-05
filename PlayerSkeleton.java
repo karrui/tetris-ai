@@ -469,7 +469,7 @@ class RowTransitionsHeuristic implements Heuristic {
                 tmp2 = field[r][c+1];
             }
         }
-            
+        return rowTransitions;    
     }
     
     private int getMaxHeight(StateCopy s) {
@@ -482,5 +482,9 @@ class RowTransitionsHeuristic implements Heuristic {
             }
         }
         return maxHeight;
+    }
+    
+    public double getDerivative(StateCopy bef, StateCopy aft) {
+        return run(aft);
     }
 }
