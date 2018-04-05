@@ -3,7 +3,7 @@ import java.util.Arrays;
 
 public class PlayerSkeleton {
 
-
+    
     private ArrayList<Heuristic> heuristics = new ArrayList<>();
 
     // update these weights, negative for minimize, positive for maximize.
@@ -216,6 +216,13 @@ class StateCopy {
         return pTop;
     }
 
+    public static final int getCols() {
+        return COLS;
+    }
+
+    public static final int getRows() {
+        return ROWS;
+    }
 
     public int getNextPiece() {
         return nextPiece;
@@ -430,6 +437,72 @@ class HolesHeuristic implements Heuristic {
     }
 
     public double getDerivative(StateCopy bef, StateCopy aft) {
+        return run(aft);
+    }
+}
+
+class ColumnHeuristic implements Heuristic {
+    private int index;
+
+    ColumnHeuristic(int index) {
+        this.index = index;
+    }
+
+    public double run(StateCopy s) {
+        int[] tops = s.getTop();
+        return tops[index];
+    }
+
+    public double getDerivative(StateCopy bef, StateCopy aft) {
+        return run(aft);
+    }
+}
+
+
+/**
+ * reduces the overall "bumpiness" of the top layer
+ */
+class absoluteDiffHeuristic implements Heuristic {
+
+    public double run(StateCopy s) {
+        //implement heuristics
+        int absDiff = 0;
+        int[] top = s.getTop();
+
+        for(int i = 0; i < top.length - 1; i++){
+            absDiff += Math.abs(top[i] - top[i + 1]);
+        }
+
+        return -1(absDiff);
+    }
+
+    public double getDerivative(StateCopy bef, StateCopy aft) {
+        return run(aft);
+    }
+}
+
+class HolesHeuristic implements Heuristic {
+
+  public double run(StateCopy s) {
+        int[][] field = s.getField();
+        int[] tops = s.getTop();
+        
+        int numOfHoles = 0;
+        int cols = s.getCols();
+        
+        for(int c = 0; c < cols; c++) {
+            int r = tops[c]-2; 
+            
+            for(r; r >= 0; r--) {
+                if(field[r][c] == 0)
+                    numOfHoles++;
+            }           
+        }
+        
+        return -(numOfHoles);
+  }
+  
+  public double getDerivative(StateCopy bef, StateCopy aft) {
         return run(aft);
     }
 }
