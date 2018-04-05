@@ -13,7 +13,7 @@ public class PlayerSkeleton {
     private static boolean isTraining = true;
     private static boolean isHeadless = false;
 
-    static String TRAINED_WEIGHTS = "weights.txt";
+    static String TRAINED_WEIGHTS = "trained_weights.txt";
 
     
     private ArrayList<Heuristic> heuristics = new ArrayList<>();
