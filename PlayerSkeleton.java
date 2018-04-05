@@ -3,11 +3,11 @@ import java.util.*;
 
 public class PlayerSkeleton {
 
-    static final int NUM_HEURISTICS = 6;
+    static final int NUM_HEURISTICS = 7;
 
     // config booleans
-    private static boolean isTraining = true;
-    private static boolean isHeadless = true;
+    private static boolean isTraining = false;
+    private static boolean isHeadless = false;
 
     static String TRAINED_WEIGHTS = "weights.txt";
 
@@ -42,6 +42,7 @@ public class PlayerSkeleton {
         heuristics.add(new HolesHeuristic());
         heuristics.add(new ColumnTransitionsHeuristic());
         heuristics.add(new AbsoluteDiffHeuristic());
+        heuristics.add(new RowTransitionsHeuristic());
 
         // column heuristics
 //        for (int i = 0; i < State.COLS; i++) {
@@ -96,7 +97,7 @@ public class PlayerSkeleton {
                     s.draw();
                     s.drawNext(0, 0);
                     try {
-                        Thread.sleep(200);
+                        Thread.sleep(1);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -528,6 +529,38 @@ class ColumnTransitionsHeuristic implements  Heuristic {
         }
 
         return colTransitions;
+    }
+}
+
+/**
+ * Returns the number of row transitions when the piece is placed
+ * A row transition occurs when an empty cell is adjacent to a filled cell on the same row and vice versa.
+ */
+class RowTransitionsHeuristic implements Heuristic {
+    public double run(StateCopy s) {
+        int[][] field = s.getField();
+        int rowTransitions = 0;
+
+        for (int r = 0; r < State.ROWS; r++) {
+            boolean priorCellFilled = false;
+            if (field[r][0] != 0) {
+                priorCellFilled = true;
+            }
+            for (int c = 1; c < State.COLS; c++) {
+                boolean currCellFilled = false;
+                if (field[r][c] != 0) {
+                    currCellFilled = true;
+                }
+
+                if (priorCellFilled != currCellFilled) {
+                    rowTransitions++;
+                }
+
+                priorCellFilled = currCellFilled;
+            }
+        }
+
+        return rowTransitions;
     }
 }
 
