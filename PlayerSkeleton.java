@@ -645,12 +645,16 @@ class PSO implements Runnable {
     private int globalBest;
     private double[] globalBestPositions = new double[NUM_HEURISTICS];
 
+    private ExecutorService executor;
+
     PSO() {
 
         File file = new File(TRAINED_WEIGHTS);
         if(file.exists() && !file.isDirectory()) {
             readWeightsFromFile(file);
         }
+
+        executor = Executors.newFixedThreadPool(NUM_THREADS);
 
         globalBest = 0;
         createSwarm();
@@ -760,7 +764,6 @@ class PSO implements Runnable {
      * @return average rows cleared (total rows clear divided by number of games) using the particle
      */
     private int playGameAndReturnScore(Particle particle) {
-        ExecutorService executor = Executors.newFixedThreadPool(NUM_THREADS);
         List <Future<Integer>> futureList = new ArrayList<>();
         for (int i = 0; i < NUM_GAMES; i++) {
             Future<Integer> future = executor.submit(new CallableTrainer(particle));
