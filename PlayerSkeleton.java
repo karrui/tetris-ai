@@ -127,6 +127,9 @@ public class PlayerSkeleton {
 
 
     public static void main(String[] args) {
+        if (args.length > 1 && args[0].equals("-t")) {
+            isTraining = true;
+        }
         PlayerSkeleton ps = new PlayerSkeleton();
         ps.execute();
     }
@@ -620,7 +623,7 @@ class WellSumFeature implements Feature {
  * This class contains the particle swarm optimizer algorithm to help us get the best weights for the features
  * =============================================================================================================
  */
-class PSO implements Runnable {
+class PSO {
     private static int UPPERBOUND_VELOCITY = 5;
     private static int LOWERBOUND_VELOCITY = -5;
     private static int RANGE_VELOCITY = UPPERBOUND_VELOCITY - LOWERBOUND_VELOCITY;
@@ -629,10 +632,10 @@ class PSO implements Runnable {
     private static int LOWERBOUND_POSITION = -10;
     private static int RANGE_POSITION = UPPERBOUND_POSITION - LOWERBOUND_POSITION;
 
-    private static int NUM_HEURISTICS = PlayerSkeleton.NUM_FEATURES;
+    private static int NUM_FEATURES = PlayerSkeleton.NUM_FEATURES;
     private static int NUM_PARTICLES = 12;  // general rule of thumb seems to be n < N < 2n, where n = numHeuristics
-    private static int NUM_ITERATIONS = 100;
-    private static int NUM_GAMES = 5;
+    static int NUM_GAMES = 5;
+    private static int NUM_ITERATIONS = 1000;
     private static int NUM_THREADS = Runtime.getRuntime().availableProcessors();
 
     private boolean hasWeightsFromFile = false;
@@ -643,7 +646,7 @@ class PSO implements Runnable {
     private static Particle[] particles;
 
     private int globalBest;
-    private double[] globalBestPositions = new double[NUM_HEURISTICS];
+    private double[] globalBestPositions = new double[NUM_FEATURES];
 
     private ExecutorService executor;
 
@@ -664,9 +667,9 @@ class PSO implements Runnable {
         Random random = new Random();
         particles = new Particle[NUM_PARTICLES];
         for (int i = 0; i < NUM_PARTICLES; i++) {
-            double[] fitness = new double[NUM_HEURISTICS];
-            double[] velocity = new double[NUM_HEURISTICS];
-            for (int j = 0; j < NUM_HEURISTICS; j++) {
+            double[] fitness = new double[NUM_FEATURES];
+            double[] velocity = new double[NUM_FEATURES];
+            for (int j = 0; j < NUM_FEATURES; j++) {
                 // generate random fitness if no current weights
                 if (hasWeightsFromFile) {
                     fitness[j] = globalBestPositions[j];
@@ -684,10 +687,14 @@ class PSO implements Runnable {
     }
 
     // main method
-    public void run() {
+    void run() {
         for (int i = 0; i < NUM_ITERATIONS; i++) {
+            // Run all Particles and make them play their own game in their own thread
+            int[] scoreForAll = playGamesAndReturnScores();
+
+            int k = 0;
             for (Particle particle : particles) {
-                int score = playGameAndReturnScore(particle);
+                int score = scoreForAll[k++];
                 particle.updatePersonalBest(score);
                 if (score > globalBest) {
                     globalBest = score;
@@ -712,6 +719,32 @@ class PSO implements Runnable {
 
         // Write to trained_weights.txt
         writeBestWeightsToFile();
+
+        // shutdown executor before closing app
+        executor.shutdown();
+    }
+
+    /**
+     * Method that creates a thread for each Particle to play game
+     * @return average scores of game played
+     */
+    private int[] playGamesAndReturnScores() {
+        List<Future<Integer>> futureList = new ArrayList<>();
+        int[] scoreForAll = new int[NUM_PARTICLES];
+        for (Particle particle : particles) {
+            Future<Integer> future = executor.submit(new CallableTrainer(particle));
+            futureList.add(future);
+        }
+
+        for (int j = 0; j < futureList.size(); j++) {
+            Future<Integer> future = futureList.get(j);
+            try {
+                scoreForAll[j] += future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+        return scoreForAll;
     }
 
     private void readWeightsFromFile(File f) {
@@ -757,35 +790,13 @@ class PSO implements Runnable {
             e.printStackTrace();
         }
     }
-
-    /**
-     * This is a multithreaded method
-     * @param particle containing the weights for the game features
-     * @return average rows cleared (total rows clear divided by number of games) using the particle
-     */
-    private int playGameAndReturnScore(Particle particle) {
-        List <Future<Integer>> futureList = new ArrayList<>();
-        for (int i = 0; i < NUM_GAMES; i++) {
-            Future<Integer> future = executor.submit(new CallableTrainer(particle));
-            futureList.add(future);
-        }
-
-        int rowsCleared = 0;
-        for (Future<Integer> future : futureList) {
-            try {
-               rowsCleared += future.get();
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
-        }
-
-        // Average the rows cleared to get a better signal of the performance
-        return rowsCleared / NUM_GAMES;
-    }
 }
 
+/**
+ * Trainer class for {@link PSO}.
+ * Plays a full game NUM_GAME times for each particle and returns the average rows cleared
+ */
 class CallableTrainer implements Callable<Integer> {
-
     private Particle particle;
 
     CallableTrainer(Particle particle) {
@@ -794,11 +805,18 @@ class CallableTrainer implements Callable<Integer> {
 
     public Integer call() {
         // System.out.println("I think multi-threading is happening"); // check
-        PlayerSkeleton trainPlayerSkeleton = new PlayerSkeleton();
-        State state = new State();
 
-        trainPlayerSkeleton.updateWeights(particle.getPosition());
-        return PlayerSkeleton.train(state, trainPlayerSkeleton);    // this will return rows cleared
+        // Run the simulation NUM_GAME times per Particle and get average to get best positions
+        int results = 0;
+        for (int gameNum = 0; gameNum < PSO.NUM_GAMES; gameNum++) {
+            PlayerSkeleton trainPlayerSkeleton = new PlayerSkeleton();
+            State state = new State();
+
+            trainPlayerSkeleton.updateWeights(particle.getPosition());
+            results += PlayerSkeleton.train(state, trainPlayerSkeleton);    // this will return rows cleared
+        }
+
+        return results / PSO.NUM_GAMES;
     }
 }
 
