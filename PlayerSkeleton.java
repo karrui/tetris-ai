@@ -590,7 +590,7 @@ class AbsoluteDiffHeuristic implements Heuristic {
 /**
  * =============================================================================================================
  * This class contains the particle swarm optimizer algorithm to help us get the best weights for the heuristics
- * Not multithreaded yet
+ * Multithreaded implementation
  * =============================================================================================================
  */
 class PSO implements Runnable {
@@ -678,14 +678,11 @@ class PSO implements Runnable {
 
         for (int i = 0; i < NUM_ITERATIONS; i++) {
             // multi-threaded approach
-            Collection<Callable<Integer>> jobs = new ArrayList<Callable<Integer>>();
             // add all the particles for evaluation first and let them run via multiple threads
             for (Particle particle : particles) {
-                // jobs.add(Callable<evaluate(particle)>);
                 Future<Integer> future = executor.submit(new Evaluate(particle));
                 list.add(future);
             }
-            // executor.invokeAll();
             // Now copy all the scores from the list of futures to our score array
             int j = 0;
             for (Future<Integer> fut : list) {
@@ -700,7 +697,6 @@ class PSO implements Runnable {
             for (Particle particle : particles) {
                 // keep all the scores in an array, then let the particle access it.
                 int score = scoreForAll[k];
-                // int score = evaluate(particle);
                 particle.updatePersonalBest(score);
                 if (score > globalBest) {
                     globalBest = score;
