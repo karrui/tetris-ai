@@ -635,7 +635,7 @@ class PSO {
     private static int NUM_PARTICLES = 16;  // general rule of thumb seems to be n < N < 2n, where n = numHeuristics
     static int NUM_GAMES = 3;
     private static int NUM_ITERATIONS = 1000;
-    private static int NUM_THREADS = Runtime.getRuntime().availableProcessors();
+    private static int NUM_THREADS = Math.max(10, Runtime.getRuntime().availableProcessors() - (NUM_PARTICLES * NUM_GAMES));
 
     private boolean hasWeightsFromFile = false;
 
@@ -803,19 +803,49 @@ class CallableTrainer implements Callable<Integer> {
     }
 
     public Integer call() {
+        ExecutorService trainerExecutor = Executors.newFixedThreadPool(PSO.NUM_GAMES);
         // System.out.println("I think multi-threading is happening"); // check
 
         // Run the simulation NUM_GAME times per Particle and get average to get best positions
         int results = 0;
-        for (int gameNum = 0; gameNum < PSO.NUM_GAMES; gameNum++) {
-            PlayerSkeleton trainPlayerSkeleton = new PlayerSkeleton();
-            State state = new State();
 
-            trainPlayerSkeleton.updateWeights(particle.getPosition());
-            results += PlayerSkeleton.train(state, trainPlayerSkeleton);    // this will return rows cleared
+        List<Future<Integer>> futureList = new ArrayList<>();
+
+        for (int gameNum = 0; gameNum < PSO.NUM_GAMES; gameNum++) {
+            Future<Integer> future = trainerExecutor.submit(new CallableGame(particle));
+            futureList.add(future);
         }
 
+        for (Future<Integer> future : futureList) {
+            try {
+                results += future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+
+        trainerExecutor.shutdown();
+
         return results / PSO.NUM_GAMES;
+    }
+}
+
+/**
+ * Class plays a game of Tetris and returns total rows cleared
+ */
+class CallableGame implements Callable<Integer> {
+    private Particle particle;
+
+    CallableGame(Particle particle) {
+        this.particle = particle;
+    }
+
+    public Integer call() {
+        PlayerSkeleton trainPlayerSkeleton = new PlayerSkeleton();
+        State state = new State();
+
+        trainPlayerSkeleton.updateWeights(particle.getPosition());
+        return PlayerSkeleton.train(state, trainPlayerSkeleton);    // this will return rows cleared
     }
 }
 
