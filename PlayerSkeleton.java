@@ -517,7 +517,7 @@ class RowTransitionsFeature implements Feature {
 
         for (int r = 0; r < State.ROWS; r++) {
             boolean priorCellFilled = true;
-            for (int c = 1; c < State.COLS; c++) {
+            for (int c = 0; c < State.COLS; c++) {
                 boolean currCellFilled = false;
                 if (field[r][c] != 0) {
                     currCellFilled = true;
