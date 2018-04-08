@@ -477,20 +477,17 @@ class HolesFeature implements Feature {
 /**
  * Returns the number of column transitions when the piece is placed
  * A column transition occurs when an empty cell is adjacent to a filled cell on the same column and vice versa.
+ * Borders count as filled cell
  */
 class ColumnTransitionsFeature implements Feature {
     public double run(StateCopy s) {
         int[][] field = s.getField();
-        int[] top = s.getTop();
 
         int colTransitions = 0;
 
         for (int c = 0; c < State.COLS; c++) {
-            boolean priorCellFilled = false;
-            if (field[0][c] != 0) {
-                priorCellFilled = true;
-            }
-            for (int r = 1; r < top[c]; r++) {
+            boolean priorCellFilled = true;
+            for (int r = 0; r < State.ROWS - 1; r++) {
                 boolean currCellFilled = false;
                 if (field[r][c] != 0) {
                     currCellFilled = true;
@@ -511,6 +508,7 @@ class ColumnTransitionsFeature implements Feature {
 /**
  * Returns the number of row transitions when the piece is placed
  * A row transition occurs when an empty cell is adjacent to a filled cell on the same row and vice versa.
+ * Borders count as a filled cell
  */
 class RowTransitionsFeature implements Feature {
     public double run(StateCopy s) {
@@ -518,10 +516,7 @@ class RowTransitionsFeature implements Feature {
         int rowTransitions = 0;
 
         for (int r = 0; r < State.ROWS; r++) {
-            boolean priorCellFilled = false;
-            if (field[r][0] != 0) {
-                priorCellFilled = true;
-            }
+            boolean priorCellFilled = true;
             for (int c = 1; c < State.COLS; c++) {
                 boolean currCellFilled = false;
                 if (field[r][c] != 0) {
@@ -533,6 +528,10 @@ class RowTransitionsFeature implements Feature {
                 }
 
                 priorCellFilled = currCellFilled;
+            }
+            // unfilled Cell next to border
+            if (!priorCellFilled) {
+                rowTransitions++;
             }
         }
 
@@ -633,7 +632,7 @@ class PSO {
     private static int RANGE_POSITION = UPPERBOUND_POSITION - LOWERBOUND_POSITION;
 
     private static int NUM_FEATURES = PlayerSkeleton.NUM_FEATURES;
-    private static int NUM_PARTICLES = 12;  // general rule of thumb seems to be n < N < 2n, where n = numHeuristics
+    private static int NUM_PARTICLES = 16;  // general rule of thumb seems to be n < N < 2n, where n = numHeuristics
     static int NUM_GAMES = 3;
     private static int NUM_ITERATIONS = 1000;
     private static int NUM_THREADS = Runtime.getRuntime().availableProcessors();
