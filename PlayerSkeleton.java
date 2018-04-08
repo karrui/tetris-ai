@@ -698,6 +698,7 @@ class PSO {
                 if (score > globalBest) {
                     globalBest = score;
                     globalBestPositions = ArrayHelper.deepCopy(particle.getPosition());
+                    writeBestWeightsToFile();
                 }
                 particle.updateVelocity(globalBestPositions, UPPERBOUND_VELOCITY, LOWERBOUND_VELOCITY);
                 particle.updatePosition(UPPERBOUND_POSITION, LOWERBOUND_POSITION);
