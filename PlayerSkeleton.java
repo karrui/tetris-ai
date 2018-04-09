@@ -619,12 +619,7 @@ class WellSumFeature implements Feature {
 
 /**
  * =============================================================================================================
-<<<<<<< HEAD
- * This class contains the particle swarm optimizer algorithm to help us get the best weights for the heuristics
- * Multithreaded implementation
-=======
  * This class contains the particle swarm optimizer algorithm to help us get the best weights for the features
->>>>>>> 512d992d11870d14702e809dae21b50862c3ccc5
  * =============================================================================================================
  */
 class PSO {
@@ -693,35 +688,12 @@ class PSO {
     // main method
     void run() {
         for (int i = 0; i < NUM_ITERATIONS; i++) {
-<<<<<<< HEAD
-            // multi-threaded approach
-            // add all the particles for evaluation first and let them run via multiple threads
-            for (Particle particle : particles) {
-                Future<Integer> future = executor.submit(new Evaluate(particle));
-                list.add(future);
-            }
-            // Now copy all the scores from the list of futures to our score array
-            int j = 0;
-            for (Future<Integer> fut : list) {
-                try {
-                    scoreForAll[j] = fut.get();
-                    j++;
-                } catch (Exception e) {
-                    System.out.println("I also don't know what to put here");
-                }
-            }
-            int k = 0;
-            for (Particle particle : particles) {
-                // keep all the scores in an array, then let the particle access it.
-                int score = scoreForAll[k];
-=======
             // Run all Particles and make them play their own game in their own thread
             int[] scoreForAll = playGamesAndReturnScores();
 
             int k = 0;
             for (Particle particle : particles) {
                 int score = scoreForAll[k++];
->>>>>>> 512d992d11870d14702e809dae21b50862c3ccc5
                 particle.updatePersonalBest(score);
                 if (score > globalBest) {
                     globalBest = score;
