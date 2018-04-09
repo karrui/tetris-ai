@@ -68,14 +68,14 @@ The features $f_i$ used will be explained in depth in Section \ref{features}.
 
 \section{Implementation}
 \subsection{StateCopy}
-In order to correctly apply the features, a new \texttt{StateCopy} class was created, extending the original \texttt{State} class, serving as a clean starting state to apply our features on in order to derive the heuristic value. 
+In order to correctly apply the features, a new \texttt{StateCopy} class was created, extending the original \texttt{State} class, serving as a clean starting state to apply our features on in order to derive the feature value.
 
 Extra variables like \texttt{currentRowsCleared} and \texttt{previousTop} is also added to the \texttt{StateCopy} class in order to obtain the information needed by various features such as the RowsCleared feature and the AverageHeight feature.
 
 Using \texttt{StateCopy} also allows us to play moves without affecting the original state of the game.
 
-\subsection{Heuristic}
-Talk about the heuristic class here
+\subsection{Feature}
+Talk about the feature class here
 
 \subsection{Learning Algo? Learner?}
 

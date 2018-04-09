@@ -1,22 +1,23 @@
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class PlayerSkeleton {
 
-    static final int NUM_HEURISTICS = 7;
+    static final int NUM_FEATURES = 8;
 
     // config booleans
     private static boolean isTraining = true;
     private static boolean isHeadless = false;
 
-    static String TRAINED_WEIGHTS = "weights.txt";
+    private static String TRAINED_WEIGHTS = "trained_weights.txt";
 
     
-    private ArrayList<Heuristic> heuristics = new ArrayList<>();
+    private ArrayList<Feature> features = new ArrayList<>();
 
     // update these weights, negative for minimize, positive for maximize.
     // Probably doesn't matter since machine will slowly move it to the correct value
@@ -24,7 +25,7 @@ public class PlayerSkeleton {
 
 
     PlayerSkeleton() {
-        weights = new double[NUM_HEURISTICS];
+        weights = new double[NUM_FEATURES];
 
         if (!isTraining) {
             // read in the trained weights into our weights array
@@ -40,17 +41,18 @@ public class PlayerSkeleton {
                 e.printStackTrace();
             }
         }
-        heuristics.add(new MaxHeightHeuristic());
-        heuristics.add(new RowsClearedHeuristic());
-        heuristics.add(new AvgHeightHeuristic());
-        heuristics.add(new HolesHeuristic());
-        heuristics.add(new ColumnTransitionsHeuristic());
-        heuristics.add(new AbsoluteDiffHeuristic());
-        heuristics.add(new RowTransitionsHeuristic());
+        features.add(new MaxHeightFeature());
+        features.add(new RowsClearedFeature());
+        features.add(new AvgHeightFeature());
+        features.add(new HolesFeature());
+        features.add(new ColumnTransitionsFeature());
+        features.add(new AbsoluteDiffFeature());
+        features.add(new RowTransitionsFeature());
+        features.add(new WellSumFeature());
 
-        // column heuristics
+        // column features
 //        for (int i = 0; i < State.COLS; i++) {
-//            heuristics.add(new ColumnHeuristic());
+//            features.add(new ColumnHeuristic());
 //        }
     }
 
@@ -80,8 +82,8 @@ public class PlayerSkeleton {
     private double valueFunction(StateCopy s) {
         double value = 0;
         int i = 0;
-        for (Heuristic heuristic: heuristics) {
-            value += weights[i++] * heuristic.run(s);
+        for (Feature feature : features) {
+            value += weights[i++] * feature.run(s);
         }
 
         return value;
@@ -116,7 +118,7 @@ public class PlayerSkeleton {
     }
 
     // training method, feels recursive as hell
-    public static int train(State s, PlayerSkeleton p) {
+    static int train(State s, PlayerSkeleton p) {
         while(!s.hasLost()) {
             s.makeMove(p.pickMove(s, s.legalMoves()));
         }
@@ -125,11 +127,14 @@ public class PlayerSkeleton {
 
 
     public static void main(String[] args) {
+        if (args.length > 1 && args[0].equals("-t")) {
+            isTraining = true;
+        }
         PlayerSkeleton ps = new PlayerSkeleton();
         ps.execute();
     }
 
-    public void updateWeights(double[] newWeights) {
+    void updateWeights(double[] newWeights) {
         weights = ArrayHelper.deepCopy(newWeights);
     }
 }
@@ -171,7 +176,7 @@ class StateCopy {
     private int nextPiece;
 
 
-    //all legal moves - first index is piece type - then a list of 2-length arrays
+    //all legal moves - first index is piece type - then a futureList of 2-length arrays
     private static int[][][] legalMoves = new int[N_PIECES][][];
 
     //indices for legalMoves
@@ -239,51 +244,19 @@ class StateCopy {
 
     }
 
-    public int[][] getField() {
+    int[][] getField() {
         return field;
     }
 
-    public int[] getTop() {
+    int[] getTop() {
         return top;
     }
 
-    public int[] getPreviousTop() {
+    int[] getPreviousTop() {
         return previousTop;
     }
 
-    public static int[] getpOrients() {
-        return pOrients;
-    }
-
-    public static int[][] getpWidth() {
-        return pWidth;
-    }
-
-    public static int[][] getpHeight() {
-        return pHeight;
-    }
-
-    public static int[][][] getpBottom() {
-        return pBottom;
-    }
-
-    public static int[][][] getpTop() {
-        return pTop;
-    }
-
-    public static final int getCols() {
-        return COLS;
-    }
-
-    public static final int getRows() {
-        return ROWS;
-    }
-
-    public int getNextPiece() {
-        return nextPiece;
-    }
-
-    public boolean hasLost() {
+    boolean hasLost() {
         return lost;
     }
 
@@ -292,7 +265,7 @@ class StateCopy {
         return cleared;
     }
 
-    public int getRowsCleared() {
+    int getRowsCleared() {
         return rowsCleared;
     }
 
@@ -301,22 +274,22 @@ class StateCopy {
     }
 
     //gives legal moves for
-    public int[][] legalMoves() {
+    int[][] legalMoves() {
         return legalMoves[nextPiece];
     }
 
-    //make a move based on the move index - its order in the legalMoves list
-    public void makeMove(int move) {
+    //make a move based on the move index - its order in the legalMoves futureList
+    void makeMove(int move) {
         makeMove(legalMoves[nextPiece][move]);
     }
 
     //make a move based on an array of orient and slot
-    public void makeMove(int[] move) {
+    private void makeMove(int[] move) {
         makeMove(move[ORIENT],move[SLOT]);
     }
 
     //returns false if you lose - true otherwise
-    public boolean makeMove(int orient, int slot) {
+    private boolean makeMove(int orient, int slot) {
         turn++;
         //height if the first column makes contact
         int height = top[slot]-pBottom[nextPiece][orient][0];
@@ -418,18 +391,17 @@ class ArrayHelper {
 
 /**
  * ==========================================================
- * Interface to encapsulate heuristics used for the Tetris AI
+ * Interface to encapsulate features used for the Tetris AI
  * ==========================================================
  */
-interface Heuristic {
+interface Feature {
     double run(StateCopy s);
 }
-
 
 /**
  * Returns the number of rows cleared by the piece
  */
-class RowsClearedHeuristic implements Heuristic {
+class RowsClearedFeature implements Feature {
 
     public double run(StateCopy s) {
         return s.getRowsCleared();
@@ -439,7 +411,7 @@ class RowsClearedHeuristic implements Heuristic {
 /**
  * Returns the maximum height of the board when the piece is placed
  */
-class MaxHeightHeuristic implements Heuristic {
+class MaxHeightFeature implements Feature {
 
     public double run(StateCopy s) {
         return getMaxHeight(s);
@@ -462,7 +434,7 @@ class MaxHeightHeuristic implements Heuristic {
  * Returns the average height of the board when the piece is placed
  * Average height is calculated by the total sum of the column heights divided by number of columns
  */
-class AvgHeightHeuristic implements  Heuristic {
+class AvgHeightFeature implements Feature {
 
     public double run(StateCopy s) {
         int[] prevTop = s.getPreviousTop();
@@ -483,7 +455,7 @@ class AvgHeightHeuristic implements  Heuristic {
 /**
  * Returns the number of holes in the board when the piece is placed
  */
-class HolesHeuristic implements Heuristic {
+class HolesFeature implements Feature {
     public double run(StateCopy s) {
         int[][] field = s.getField();
         int[] top = s.getTop();
@@ -505,20 +477,17 @@ class HolesHeuristic implements Heuristic {
 /**
  * Returns the number of column transitions when the piece is placed
  * A column transition occurs when an empty cell is adjacent to a filled cell on the same column and vice versa.
+ * Borders count as filled cell
  */
-class ColumnTransitionsHeuristic implements  Heuristic {
+class ColumnTransitionsFeature implements Feature {
     public double run(StateCopy s) {
         int[][] field = s.getField();
-        int[] top = s.getTop();
 
         int colTransitions = 0;
 
         for (int c = 0; c < State.COLS; c++) {
-            boolean priorCellFilled = false;
-            if (field[0][c] != 0) {
-                priorCellFilled = true;
-            }
-            for (int r = 1; r < top[c]; r++) {
+            boolean priorCellFilled = true;
+            for (int r = 0; r < State.ROWS - 1; r++) {
                 boolean currCellFilled = false;
                 if (field[r][c] != 0) {
                     currCellFilled = true;
@@ -539,18 +508,16 @@ class ColumnTransitionsHeuristic implements  Heuristic {
 /**
  * Returns the number of row transitions when the piece is placed
  * A row transition occurs when an empty cell is adjacent to a filled cell on the same row and vice versa.
+ * Borders count as a filled cell
  */
-class RowTransitionsHeuristic implements Heuristic {
+class RowTransitionsFeature implements Feature {
     public double run(StateCopy s) {
         int[][] field = s.getField();
         int rowTransitions = 0;
 
         for (int r = 0; r < State.ROWS; r++) {
-            boolean priorCellFilled = false;
-            if (field[r][0] != 0) {
-                priorCellFilled = true;
-            }
-            for (int c = 1; c < State.COLS; c++) {
+            boolean priorCellFilled = true;
+            for (int c = 0; c < State.COLS; c++) {
                 boolean currCellFilled = false;
                 if (field[r][c] != 0) {
                     currCellFilled = true;
@@ -562,6 +529,10 @@ class RowTransitionsHeuristic implements Heuristic {
 
                 priorCellFilled = currCellFilled;
             }
+            // unfilled Cell next to border
+            if (!priorCellFilled) {
+                rowTransitions++;
+            }
         }
 
         return rowTransitions;
@@ -570,12 +541,12 @@ class RowTransitionsHeuristic implements Heuristic {
 
 /**
  * Returns the absolute height different amongst all columns
- * This heuristic aims to reduce the overall "bumpiness" of the top layer
+ * This feature aims to reduce the overall "bumpiness" of the top layer
  */
-class AbsoluteDiffHeuristic implements Heuristic {
+class AbsoluteDiffFeature implements Feature {
 
     public double run(StateCopy s) {
-        //implement heuristics
+        //implement features
         int absDiff = 0;
         int[] top = s.getTop();
 
@@ -588,26 +559,90 @@ class AbsoluteDiffHeuristic implements Heuristic {
 }
 
 /**
+ * Returns the sum of the wells when the piece is placed
+ * A well is a sequence of empty cells above the top piece in a column where it is surrounded by cells or walls
+ */
+class WellSumFeature implements Feature {
+
+    public double run(StateCopy s) {
+        int[][] field = s.getField();
+        int wellSum = 0;
+
+
+        // check column wells from 2nd column
+        for (int c = 1; c < State.COLS - 1; c++) {
+            for (int r = 0; r < State.ROWS; r++) {
+                // Current cell is empty,  but left and right cells are filled, meaning well
+                if (field[r][c] == 0 && field[r][c - 1] != 0 && field[r][c + 1] != 0) {
+                    wellSum++;
+                    // check depth of well
+                    for (int depth = r - 1; depth >= 0; depth--) {
+                        if (field[depth][c] != 0) {
+                            break;
+                        }
+                        wellSum++;
+                    }
+                }
+            }
+        }
+
+        // check left and right boundary wells
+        for (int r = 0; r < State.ROWS; r++) {
+            // left boundary: cell at first column is empty, but column 1 is filled
+            if (field[r][0] == 0 && field[r][1] != 0) {
+                wellSum++;
+                // check depth of well
+                for (int depth = r - 1; depth >= 0; depth--) {
+                    if (field[depth][0] != 0) {
+                        break;
+                    }
+                    wellSum++;
+                }
+            }
+
+            // right boundary: cell at last column empty, but second last column is filled
+            int rightBoundaryIndex = State.COLS - 1;
+            if (field[r][rightBoundaryIndex] == 0 && field[r][rightBoundaryIndex - 1] != 0) {
+                wellSum++;
+                // check depth of well
+                for (int depth = r - 1; depth >= 0; depth--) {
+                    if (field[depth][rightBoundaryIndex] != 0) {
+                        break;
+                    }
+                    wellSum++;
+                }
+            }
+        }
+        return wellSum;
+    }
+}
+
+/**
  * =============================================================================================================
+<<<<<<< HEAD
  * This class contains the particle swarm optimizer algorithm to help us get the best weights for the heuristics
  * Multithreaded implementation
+=======
+ * This class contains the particle swarm optimizer algorithm to help us get the best weights for the features
+>>>>>>> 512d992d11870d14702e809dae21b50862c3ccc5
  * =============================================================================================================
  */
-class PSO implements Runnable {
-    static int UPPERBOUND_VELOCITY = 5;
-    static int LOWERBOUND_VELOCITY = -5;
-    static int RANGE_VELOCITY = UPPERBOUND_VELOCITY - LOWERBOUND_VELOCITY;
+class PSO {
+    private static int UPPERBOUND_VELOCITY = 5;
+    private static int LOWERBOUND_VELOCITY = -5;
+    private static int RANGE_VELOCITY = UPPERBOUND_VELOCITY - LOWERBOUND_VELOCITY;
 
-    static int UPPERBOUND_POSITION = 10;
-    static int LOWERBOUND_POSITION = -10;
-    static int RANGE_POSITION = UPPERBOUND_POSITION - LOWERBOUND_POSITION;
+    private static int UPPERBOUND_POSITION = 10;
+    private static int LOWERBOUND_POSITION = -10;
+    private static int RANGE_POSITION = UPPERBOUND_POSITION - LOWERBOUND_POSITION;
 
-    static int NUM_HEURISTICS = PlayerSkeleton.NUM_HEURISTICS;
-    static int NUM_PARTICLES = 10;  // general rule of thumb seems to be n < N < 2n, where n = numHeuristics
-    static int NUM_ITERATIONS = 100;
-    static int NUM_THREADS = 10;
+    private static int NUM_FEATURES = PlayerSkeleton.NUM_FEATURES;
+    private static int NUM_PARTICLES = 16;  // general rule of thumb seems to be n < N < 2n, where n = numHeuristics
+    static int NUM_GAMES = 3;
+    private static int NUM_ITERATIONS = 1000;
+    private static int NUM_THREADS = Runtime.getRuntime().availableProcessors();
 
-    boolean hasWeightsFromFile = false;
+    private boolean hasWeightsFromFile = false;
 
     private static String LOG_FILE = "./t_weights_log.txt";
     private static String TRAINED_WEIGHTS = "./trained_weights.txt";
@@ -615,33 +650,18 @@ class PSO implements Runnable {
     private static Particle[] particles;
 
     private int globalBest;
-    private double[] globalBestPositions = new double[NUM_HEURISTICS];
+    private double[] globalBestPositions = new double[NUM_FEATURES];
 
-    private final ExecutorService executor;
-    private final List <Future<Integer>> list;
+    private ExecutorService executor;
 
-    private int[] scoreForAll;
+    PSO() {
 
-    public PSO() {
-
-        File f = new File(TRAINED_WEIGHTS);
-        if(f.exists() && !f.isDirectory()) {
-            try {
-                hasWeightsFromFile = true;
-                BufferedReader bufferedReader = new BufferedReader(new FileReader(f));
-                String line;
-                int i = 0;
-                while ((line = bufferedReader.readLine()) != null) {
-                    globalBestPositions[i++] = Double.parseDouble(line);
-                }
-                bufferedReader.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        File file = new File(TRAINED_WEIGHTS);
+        if(file.exists() && !file.isDirectory()) {
+            readWeightsFromFile(file);
         }
 
         executor = Executors.newFixedThreadPool(NUM_THREADS);
-        list = new ArrayList<Future<Integer>>();
 
         globalBest = 0;
         createSwarm();
@@ -651,9 +671,9 @@ class PSO implements Runnable {
         Random random = new Random();
         particles = new Particle[NUM_PARTICLES];
         for (int i = 0; i < NUM_PARTICLES; i++) {
-            double[] fitness = new double[NUM_HEURISTICS];
-            double[] velocity = new double[NUM_HEURISTICS];
-            for (int j = 0; j < NUM_HEURISTICS; j++) {
+            double[] fitness = new double[NUM_FEATURES];
+            double[] velocity = new double[NUM_FEATURES];
+            for (int j = 0; j < NUM_FEATURES; j++) {
                 // generate random fitness if no current weights
                 if (hasWeightsFromFile) {
                     fitness[j] = globalBestPositions[j];
@@ -671,12 +691,9 @@ class PSO implements Runnable {
     }
 
     // main method
-    public void run() {
-        // to store all the scores for all the particles per iteration
-        scoreForAll = new int[NUM_PARTICLES];
-        Arrays.fill(scoreForAll, 0);
-
+    void run() {
         for (int i = 0; i < NUM_ITERATIONS; i++) {
+<<<<<<< HEAD
             // multi-threaded approach
             // add all the particles for evaluation first and let them run via multiple threads
             for (Particle particle : particles) {
@@ -697,36 +714,28 @@ class PSO implements Runnable {
             for (Particle particle : particles) {
                 // keep all the scores in an array, then let the particle access it.
                 int score = scoreForAll[k];
+=======
+            // Run all Particles and make them play their own game in their own thread
+            int[] scoreForAll = playGamesAndReturnScores();
+
+            int k = 0;
+            for (Particle particle : particles) {
+                int score = scoreForAll[k++];
+>>>>>>> 512d992d11870d14702e809dae21b50862c3ccc5
                 particle.updatePersonalBest(score);
                 if (score > globalBest) {
                     globalBest = score;
                     globalBestPositions = ArrayHelper.deepCopy(particle.getPosition());
+                    writeBestWeightsToFile();
                 }
-
-                particle.updateVelocity(globalBestPositions, RANGE_VELOCITY);
+                particle.updateVelocity(globalBestPositions, UPPERBOUND_VELOCITY, LOWERBOUND_VELOCITY);
                 particle.updatePosition(UPPERBOUND_POSITION, LOWERBOUND_POSITION);
-                k++; // to get correct particle position
             }
-
-            // clear array list to make sure we don't repeat values
-            list.clear();
 
             // Log details
             System.out.printf("Iteration %d globalBest: %d\n", i, globalBest);
             // Write to log file
-            try {
-                BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(LOG_FILE, true));
-                bufferedWriter.append("Iteration ").append(String.valueOf(i)).append(", Score: ").append(String.valueOf(globalBest)).append("\n");
-                bufferedWriter.append("======== Scores ========= \n");
-                for (double globalBestPosition : globalBestPositions) {
-                    bufferedWriter.append(String.valueOf(globalBestPosition)).append(" ");
-                }
-                bufferedWriter.append("\n");
-                bufferedWriter.flush();
-                bufferedWriter.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            writeToLogFile(i);
         }
 
         // Best score for this training session here
@@ -737,6 +746,51 @@ class PSO implements Runnable {
         System.out.println();
 
         // Write to trained_weights.txt
+        writeBestWeightsToFile();
+
+        // shutdown executor before closing app
+        executor.shutdown();
+    }
+
+    /**
+     * Method that creates a thread for each Particle to play game
+     * @return average scores of game played
+     */
+    private int[] playGamesAndReturnScores() {
+        List<Future<Integer>> futureList = new ArrayList<>();
+        int[] scoreForAll = new int[NUM_PARTICLES];
+        for (Particle particle : particles) {
+            Future<Integer> future = executor.submit(new CallableTrainer(particle));
+            futureList.add(future);
+        }
+
+        for (int j = 0; j < futureList.size(); j++) {
+            Future<Integer> future = futureList.get(j);
+            try {
+                scoreForAll[j] += future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+        return scoreForAll;
+    }
+
+    private void readWeightsFromFile(File f) {
+        try {
+            hasWeightsFromFile = true;
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(f));
+            String line;
+            int i = 0;
+            while ((line = bufferedReader.readLine()) != null) {
+                globalBestPositions[i++] = Double.parseDouble(line);
+            }
+            bufferedReader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void writeBestWeightsToFile() {
         try {
             BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(TRAINED_WEIGHTS));
             for (double globalBestPosition : globalBestPositions) {
@@ -747,41 +801,50 @@ class PSO implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
     }
 
-    private Integer evaluate(Particle particle) {
-        PlayerSkeleton trainPlayerSkeleton = new PlayerSkeleton();
-        State state = new State();
-
-        trainPlayerSkeleton.updateWeights(particle.getPosition());
-
-        return PlayerSkeleton.train(state, trainPlayerSkeleton);    // this will return rows cleared
+    private void writeToLogFile(int iteration) {
+        try {
+            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(LOG_FILE, true));
+            bufferedWriter.append("Iteration ").append(String.valueOf(iteration)).append(", Score: ").append(String.valueOf(globalBest)).append("\n");
+            bufferedWriter.append("======== Scores ========= \n");
+            for (double globalBestPosition : globalBestPositions) {
+                bufferedWriter.append(String.valueOf(globalBestPosition)).append(" ");
+            }
+            bufferedWriter.append("\n");
+            bufferedWriter.flush();
+            bufferedWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-
 }
 
-class Evaluate implements Callable<Integer> {
+/**
+ * Trainer class for {@link PSO}.
+ * Plays a full game NUM_GAME times for each particle and returns the average rows cleared
+ */
+class CallableTrainer implements Callable<Integer> {
+    private Particle particle;
 
-    Particle particle;
-
-    Evaluate(Particle particle) {
+    CallableTrainer(Particle particle) {
         this.particle = particle;
     }
 
-    public Integer call() throws Exception {
-        try {
-            // System.out.println("I think multi-threading is happening"); // check
+    public Integer call() {
+        // System.out.println("I think multi-threading is happening"); // check
+
+        // Run the simulation NUM_GAME times per Particle and get average to get best positions
+        int results = 0;
+        for (int gameNum = 0; gameNum < PSO.NUM_GAMES; gameNum++) {
             PlayerSkeleton trainPlayerSkeleton = new PlayerSkeleton();
             State state = new State();
 
             trainPlayerSkeleton.updateWeights(particle.getPosition());
-            return PlayerSkeleton.train(state, trainPlayerSkeleton);    // this will return rows cleared
-        } catch (Exception e) {
-            return -1; // error
+            results += PlayerSkeleton.train(state, trainPlayerSkeleton);    // this will return rows cleared
         }
 
+        return results / PSO.NUM_GAMES;
     }
 }
 
@@ -793,18 +856,17 @@ class Particle {
 
     // Using values stated to be decent in
     // https://pdfs.semanticscholar.org/94b5/2262c526dbe38919d53b4c15c81130a12c3e.pdf
-    //
-    static double INERTIA = 0.6571; //0.7298;
-    static double COGNITIVE_PARAMETER = 1.6319; // 1.49618;
-    static double SOCIAL_PARAMETER = 0.6239; //1.49618;
+    private static double INERTIA = 0.7298;
+    private static double COGNITIVE_PARAMETER = 1.49618;
+    private static double SOCIAL_PARAMETER = 1.49618;
 
-    double[] position;
-    double[] velocity;
+    private double[] position;
+    private double[] velocity;
 
-    double personalBest;
-    double[] personalBestPositions;
+    private double personalBest;
+    private double[] personalBestPositions;
 
-    public Particle(double[] position, double[] velocity) {
+    Particle(double[] position, double[] velocity) {
         personalBest = 0;
         this.position = position;
         this.velocity = velocity;
@@ -812,29 +874,29 @@ class Particle {
     }
 
     // updates personalBest and personBestPosition if given score is better than current best
-    public void updatePersonalBest(double given) {
+    void updatePersonalBest(double given) {
         if (given > personalBest) {
             personalBest = given;
             personalBestPositions = ArrayHelper.deepCopy(position);
         }
     }
 
-    public void updateVelocity(double[] globalBestPositions, int range) {
+    void updateVelocity(double[] globalBestPositions, int upperBound, int lowerBound) {
         Random random = new Random();
         for (int i = 0; i < velocity.length; i++) {
             velocity[i] = INERTIA * velocity[i]
                         + COGNITIVE_PARAMETER * (personalBestPositions[i] - position[i]) * random.nextDouble()
                         + SOCIAL_PARAMETER * (globalBestPositions[i] - position[i]) * random.nextDouble();
             // check if velocity out of range
-            if (velocity[i] > range) {
-                velocity[i] = range;
-            } else if (velocity[i] < -range) {
-                velocity[i] = -range;
+            if (velocity[i] > upperBound) {
+                velocity[i] = upperBound;
+            } else if (velocity[i] < lowerBound) {
+                velocity[i] = lowerBound;
             }
         }
     }
 
-    public void updatePosition(int upperBound, int lowerBound) {
+    void updatePosition(int upperBound, int lowerBound) {
         for (int i = 0; i < position.length; i++) {
             position[i] += velocity[i];
             // check if position out of range
@@ -846,7 +908,7 @@ class Particle {
         }
     }
 
-    public double[] getPosition() {
+    double[] getPosition() {
         return position;
     }
 }
