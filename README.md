@@ -1,3 +1,19 @@
+# AI Tetris using Particle Swarm Optimization
+![Running application using trained weights](https://media.giphy.com/media/w6VD3RJagXNWinJ4yl/giphy.gif)
+
+Running application using trained weights
+
+# Features
+- Maximum height of board
+- Average height of board
+- Rows cleared by piece
+- Number of holes
+- Number of column transitions
+- Number of row transitions
+- Sum of wells in board
+- Absolute different of heights in board
+
+## Description
 This is a basic Tetris simulation.
 
 Files:
