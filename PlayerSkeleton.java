@@ -662,6 +662,26 @@ class PSO {
         createSwarm();
     }
 
+    PSO(int numParticles, double inertia, double socialParameter, double cognitiveParameter) {
+
+        NUM_PARTICLES = numParticles;
+        Particle.INERTIA = inertia;
+        Particle.SOCIAL_PARAMETER = socialParameter;
+        Particle.COGNITIVE_PARAMETER = cognitiveParameter;
+        System.out.println("NUM_PARTICLES, INERTA, PARAMETERS are: " + NUM_PARTICLES + " " + Particle.INERTIA + " "
+            + Particle.COGNITIVE_PARAMETER + " " + Particle.SOCIAL_PARAMETER);
+
+        File file = new File(TRAINED_WEIGHTS);
+        if(file.exists() && !file.isDirectory()) {
+            readWeightsFromFile(file);
+        }
+
+        executor = Executors.newFixedThreadPool(NUM_THREADS);
+
+        globalBest = 0;
+        createSwarm();
+    }
+
     private void createSwarm() {
         Random random = new Random();
         particles = new Particle[NUM_PARTICLES];
@@ -686,7 +706,7 @@ class PSO {
     }
 
     // main method
-    void run() {
+    public int run() {
         for (int i = 0; i < NUM_ITERATIONS; i++) {
             // Run all Particles and make them play their own game in their own thread
             int[] scoreForAll = playGamesAndReturnScores();
@@ -722,6 +742,8 @@ class PSO {
 
         // shutdown executor before closing app
         executor.shutdown();
+
+        return globalBest;
     }
 
     /**
@@ -828,9 +850,9 @@ class Particle {
 
     // Using values stated to be decent in
     // https://pdfs.semanticscholar.org/94b5/2262c526dbe38919d53b4c15c81130a12c3e.pdf
-    private static double INERTIA = 0.7298;
-    private static double COGNITIVE_PARAMETER = 1.49618;
-    private static double SOCIAL_PARAMETER = 1.49618;
+    public static double INERTIA = 0.7298;
+    public static double COGNITIVE_PARAMETER = 1.49618;
+    public static double SOCIAL_PARAMETER = 1.49618;
 
     private double[] position;
     private double[] velocity;
