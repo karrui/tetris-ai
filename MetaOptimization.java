@@ -2,7 +2,7 @@ import java.util.Random;
 
 class MetaOptimization {
 
-    private static int NUM_ITERATIONS = 3;
+    private static int NUM_ITERATIONS = 10;
     private static int currBestScore;
     private static int globalBestScore;
 
