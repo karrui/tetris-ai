@@ -16,7 +16,7 @@
 
 \author
 {Lau Kar Rui, A0155946U\\
-Poh Jie, \\
+Poh Jie, A0158523A\\
 Matilda, \\
 Chee Wee, \\
 \\
@@ -39,10 +39,11 @@ Chee Wee, \\
 
 
 \section{Introduction}
-	
+Given a Tetris game of board size $h = 20$ rows by $w = 10$ columns, $ \exists s_i \in Shapes $ which will be generated randomly each turn, where 
+For $i \in \{1, ..., 6\} =: I, P(s_i) = P(s_{i+1})$. The aim is to create an AI agent s.t. $ \max_{x \in Z^+} \sum^N_{i = 1} RowsCleared(i) $, where $N$ are the number of turns for a particular game $G$.
 	
 \section{Utility Function}
-We defined the utility function as a linear function $F$ with each feature $f_i \in Features$ having an assigned weight $w_i$, where $i = 1...n$, with $n$ being the number of features. Each $f_i$ derives a real value from a state $s$. The function is then defined as:
+We define the utility function as a linear function $F$ with each feature $f_i \in Features$ having an assigned weight $w_i$, where $i = 1...n$, with $n$ being the number of features. Each $f_i$ derives a real value from a state $s$. The function is then defined as:
 	$$F(s) = \sum_{i = 1}^{n} w_if_i(s)$$
 The features $f_i$ used will be explained in depth in Section \ref{features}.
 	
@@ -77,8 +78,8 @@ Using \texttt{StateCopy} also allows us to play moves without affecting the orig
 \subsection{Feature}
 Talk about the feature class here
 
-\subsection{Learning Algo? Learner?}
-
+\subsection{Machine Learning Algorithm}
+We apply the Particle Swarm Optimization to this problem. 
 \section{Scaling The Algorithm For Big Data}
 
 \section{Results}
