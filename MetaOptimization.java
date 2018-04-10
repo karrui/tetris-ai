@@ -1,3 +1,6 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Random;
 
 class MetaOptimization {
@@ -20,6 +23,8 @@ class MetaOptimization {
     private static double inertiaBound;
     private static double socialParameterBound;
     private static double cognitiveParameterBound;
+
+    private static String LOG_FILE = "./mo_parameters_log.txt";
 
     public static void main(String[] args) {
         MetaOptimization meta = new MetaOptimization();
@@ -95,8 +100,26 @@ class MetaOptimization {
                 socialParameterBound = socialParameterBound * decreaseFactor;
                 cognitiveParameterBound = cognitiveParameterBound * decreaseFactor;
             }
-        }
 
-        System.out.println("globalBest is now: " + globalBestScore);
+            System.out.println("globalBest is now: " + globalBestScore);
+            writeToLogFile(i);
+        }
+    }
+
+    private void writeToLogFile(int iteration) {
+        try {
+            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(LOG_FILE, true));
+            bufferedWriter.append("Iteration ").append(String.valueOf(iteration)).append(", Score: ")
+                    .append(String.valueOf(globalBestScore)).append("\n");
+            bufferedWriter.append("======== Parameters ========= \n");
+            bufferedWriter.append("Swarm size: ").append(String.valueOf(swarm))
+                    .append(" inertia: ").append(String.valueOf(inertia))
+                    .append(" social: ").append(String.valueOf(socialParameter))
+                    .append(" cognitive: ").append(String.valueOf(cognitiveParameter)).append("\n");
+            bufferedWriter.flush();
+            bufferedWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
