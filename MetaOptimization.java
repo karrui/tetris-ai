@@ -40,6 +40,8 @@ class MetaOptimization {
 
         // initialise x to a random solution in the search space.
         // more specifically, we initialise parameters in PSO, namely swarm size, inertia, social and cognitive parameters
+
+        // swarm \in [0, 200]
         swarm = r.nextInt(199) + 1;
         // for generating double values within a range: randomValue = rangeMin + (rangeMax - rangeMin) * r.nextDouble()
         // inertia \in [-2, 2]
@@ -49,7 +51,7 @@ class MetaOptimization {
         cognitiveParameter = -4.0 + 8.0 * r.nextDouble();
 
         // set the initial sampling range d to cover the entire search space
-        swarmBound = 30;
+        swarmBound = 200;
         inertiaBound = 2.0;
         socialParameterBound = 4.0;
         cognitiveParameterBound = 4.0;
@@ -62,7 +64,7 @@ class MetaOptimization {
         for (int i = 0; i < NUM_ITERATIONS; i ++) {
 
             // pick a random vector a~U(-d,d)
-            int randomSwarm = -1 * swarmBound + (swarmBound * 2) * r.nextInt();
+            int randomSwarm = -1 * swarmBound + r.nextInt(swarmBound * 2 + 1);
             double randomInertia = -1.0 * inertiaBound + (inertiaBound * 2) * r.nextDouble();
             double randomSocialParameter = -1.0 * socialParameterBound + (socialParameterBound * 2)
                     * r.nextDouble();
@@ -75,9 +77,10 @@ class MetaOptimization {
                 swarmHere = swarm + randomSwarm;
             }
             else {
-                // swarm will either decrement by 1, stay the same or increment by 1
-                // the value 1 has been arbitrarily chosen
-                swarmHere = swarm + (-1 + r.nextInt(2));
+                // swarm will either decrement or increment within a range of 19
+                // the value 30 has been chosen such that for 10 iterations of meta-optimization,
+                // we have a low probability of getting swarm <= 0
+                swarmHere = swarm + (-19 + r.nextInt(39));
             }
             double inertiaHere = inertia + randomInertia;
             double socialParameterHere = socialParameter + randomSocialParameter;
