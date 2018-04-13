@@ -11,7 +11,7 @@ public class PlayerSkeleton {
     static final int NUM_FEATURES = 8;
 
     // config booleans
-    private static boolean isTraining = true;
+    private static boolean isTraining = false;
     private static boolean isHeadless = false;
 
     private static String TRAINED_WEIGHTS = "trained_weights.txt";
@@ -618,9 +618,7 @@ class WellSumFeature implements Feature {
 }
 
 /**
- * =============================================================================================================
  * This class contains the particle swarm optimizer algorithm to help us get the best weights for the features
- * =============================================================================================================
  */
 class PSO {
     private static int UPPERBOUND_VELOCITY = 5;
@@ -634,7 +632,7 @@ class PSO {
     private static int NUM_FEATURES = PlayerSkeleton.NUM_FEATURES;
     private static int NUM_PARTICLES = 16;  // general rule of thumb seems to be n < N < 2n, where n = numHeuristics
     static int NUM_GAMES = 3;
-    private static int NUM_ITERATIONS = 50;
+    private static int NUM_ITERATIONS = 1000;
     private static int NUM_THREADS = Runtime.getRuntime().availableProcessors();
 
     private boolean hasWeightsFromFile = false;
@@ -650,26 +648,6 @@ class PSO {
     private ExecutorService executor;
 
     PSO() {
-
-        File file = new File(TRAINED_WEIGHTS);
-        if(file.exists() && !file.isDirectory()) {
-            readWeightsFromFile(file);
-        }
-
-        executor = Executors.newFixedThreadPool(NUM_THREADS);
-
-        globalBest = 0;
-        createSwarm();
-    }
-
-    PSO(int numParticles, double inertia, double socialParameter, double cognitiveParameter) {
-
-        NUM_PARTICLES = numParticles;
-        Particle.INERTIA = inertia;
-        Particle.SOCIAL_PARAMETER = socialParameter;
-        Particle.COGNITIVE_PARAMETER = cognitiveParameter;
-        System.out.println("NUM_PARTICLES, INERTA, PARAMETERS are: " + NUM_PARTICLES + " " + Particle.INERTIA + " "
-            + Particle.COGNITIVE_PARAMETER + " " + Particle.SOCIAL_PARAMETER);
 
         File file = new File(TRAINED_WEIGHTS);
         if(file.exists() && !file.isDirectory()) {
@@ -706,7 +684,7 @@ class PSO {
     }
 
     // main method
-    public int run() {
+    void run() {
         for (int i = 0; i < NUM_ITERATIONS; i++) {
             // Run all Particles and make them play their own game in their own thread
             int[] scoreForAll = playGamesAndReturnScores();
@@ -742,8 +720,6 @@ class PSO {
 
         // shutdown executor before closing app
         executor.shutdown();
-
-        return globalBest;
     }
 
     /**
@@ -850,9 +826,9 @@ class Particle {
 
     // Using values stated to be decent in
     // https://pdfs.semanticscholar.org/94b5/2262c526dbe38919d53b4c15c81130a12c3e.pdf
-    public static double INERTIA = 0.7298;
-    public static double COGNITIVE_PARAMETER = 1.49618;
-    public static double SOCIAL_PARAMETER = 1.49618;
+    private static double INERTIA = 0.7298;
+    private static double COGNITIVE_PARAMETER = 1.49618;
+    private static double SOCIAL_PARAMETER = 1.49618;
 
     private double[] position;
     private double[] velocity;
