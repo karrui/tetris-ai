@@ -4,18 +4,21 @@
 \numberwithin{table}{section}
 \usepackage{longtable}
 \usepackage{biblatex}
+\addbibresource{references.bib}
 
 % The following parameters seem to provide a reasonable page setup.
 
 \topmargin 0.0cm
 \oddsidemargin 0.0cm
-\textwidth 16cm
+\textwidth 16cm 
 \textheight 20cm
 \footskip 3.0cm
 
 % Include your paper's title here
 \title{\vspace{-4.5cm}AI Tetris - A CS3243 Project (Group 21)}
 \author{Lau Kar Rui (A0155936U), Poh Jie, Matilda (A0178867A)}
+
+
 % Start of document.
 \begin{document} 
 % 1.75 space the manuscript.
@@ -24,10 +27,10 @@
 \maketitle 
 
 \section{Introduction}
-In this project, we create an utility based Tetris-playing AI Agent with utility weights derived through the \emph{Particle Swarm Optimization} algorithm to maximise the number of cleared rows in a single game. A standard Tetris board of 20 rows by 10 columns is used, along with the standard 7 tetrominos (I, O, T, S, Z, J, and L).
+In this project, we create an utility based Tetris-playing AI Agent with utility weights derived through the \emph{Particle Swarm Optimization} algorithm to maximise the number of cleared rows in a single game. A standard Tetris board of 20 rows by 10 columns is used, along with the standard 7 tetrominos (I, O, T, S, Z, J, and L) that are randomly chosen each turn.
 
 The best move is chosen by the \emph{state} that maximizes the utility function. This is done by the summation of the values of 8 different features. Calculating the summation of all the features is trivial, but deciding the best weights for our features to pick the best move is both complex and crucial for our agent to perform to its highest potential. 
-
+	
 \section{Utility Function}\label{util-function}
 We defined the utility function as a linear function $F$ with each feature $f_i \in Features$ having an assigned weight $w_i$, where $i = 1...n$, with $n$ being the number of features. Each $f_i$ derives a real value from a state $s$. The function is then defined as:
 	$$F(s) = \sum_{i = 1}^{n} w_if_i(s)$$
@@ -36,15 +39,15 @@ Table \ref{featurestable} shows the features $f_i$ used to calculate $w_i \in We
 
 \begin{longtable}[H]{|p{4cm}|p{11.2cm}|}
 \hline
-\textbf{Feature}  & \textbf{Description}                                                                                                                                \\ \hline
-RowsCleared       & Number of rows cleared                                                                                                                              \\ \hline
-MaxHeightIncrease & The maximum height increase among all columns                                                                                                       \\ \hline
-AvgHeightIncrease & The average height increase among all columns                                                                                                       \\ \hline
-AbsoluteDiff      & The absolute height difference between all columns                                                                                                  \\ \hline
-NumHoles          & Number of holes; a hole is defined as an empty cell with a non-empty cell above it                                                                  \\ \hline
-ColumnTransition  & The total number of column transitions; a column transition is defined as an empty cell adjacent to a filled cell on the same column and vice versa \\ \hline
-RowTransition     & The total number of row transitions; a row transition is defined as an empty cell adjacent to a filled cell on the same row and vice versa          \\ \hline
-WellSum           & The total number of empty cells above the columns' top heights which are adjacent to filled cells on both sides                                     \\ \hline
+\textbf{Feature}  & \textbf{Description} \\ \hline
+\textbf{RowsCleared }      & Number of rows cleared \\ \hline
+\textbf{MaxHeightIncrease} & The maximum height increase among all columns \\ \hline
+\textbf{AvgHeightIncrease} & The average height increase among all columns \\ \hline
+\textbf{AbsoluteDiff}      & The absolute height difference between all columns \\ \hline
+\textbf{NumHoles}          & Number of holes; a hole is defined as an empty cell with a non-empty cell above it \\ \hline
+\textbf{ColumnTransition}  & The total number of column transitions; a column transition is defined as an empty cell adjacent to a filled cell on the same column and vice versa \\ \hline
+\textbf{RowTransition}     & The total number of row transitions; a row transition is defined as an empty cell adjacent to a filled cell on the same row and vice versa \\ \hline
+\textbf{WellSum}           & The total number of empty cells above the columns' top heights which are adjacent to filled cells on both sides \\ \hline
 \caption{Features used}
 \label{featurestable}
 \end{longtable}
@@ -74,7 +77,7 @@ $\phi_p$ acts as the particle's ``memory'', causing it to return to its individu
 
 $\omega$ refers to the \emph{inertia} of the particle, and keeps the particle moving in the same direction it was originally heading. A lower value speeds up convergence of the swarm in the search space, and a higher value encourages exploring the search-space.
 
-Values for these parameters were first chosen based on \cite{1} and later optimized with the Meta Optimization algorithm discussed in Section \ref{meta-opt}.
+Values for these parameters were first chosen based on values discovered by \emph{Van Den Bergh and Engelbrecht} \cite{VanDenBergh2006ATrajectories} and later optimized with the Meta Optimization algorithm discussed in Section \ref{meta-opt}.
 
 \subsection{Meta Optimization of PSO using PSO}\label{meta-opt}
 Talk about the PSO optimization here
@@ -82,6 +85,16 @@ Talk about the PSO optimization here
 \section{Scaling The Algorithm For Big Data}
 Talk about parallelizing the application here
 Talk about using Compute Cluster
+
+\begin{longtable}[H]{|l|l|}
+\hline
+                         			& \textbf{Time Taken for 20 iterations (in seconds)} \\ \hline
+\textbf{No multithreading}			&                                           \\ \hline
+\textbf{Multithreading particles} 	&                                           \\ \hline
+\textbf{Multithreading games} 		&                                           \\ \hline
+\caption{Time comparison}
+\label{multithread-comp-table}
+\end{longtable}
 
 \section{Training Results}\label{weights}
 After 1000 iterations of our training algorithm described in Section \ref{PSO}, we arrived at the weights:
@@ -111,17 +124,44 @@ $$
 It is interesting to see that the weights obtained for the $RowsCleared$ feature is negative, meaning the linear function $F$ minimizes the number of rows cleared instead of maximizing it as one would expect. This may be because it is riskier to allow a greater height without clearing any rows and is a byproduct of height minimization, as there are no incentives for the learning algorithm to allow for such risks (such as a score multiplier when multiple rows are cleared). 
 
 \section{Results}
-The results of 100 runs using the weights obtained in Section \ref{weights} can be seen in Fig. \ref{results-graph} below.
+The results of 100 runs using the weights obtained in Section \ref{weights} can be seen in Fig. \ref{results-graph}, and the statistical findings in Table \ref{results-table}.
+
+\begin{longtable}{|l|l|}
+\hline
+\textbf{Mean}      &  xxx,xxx	\\ \hline
+\textbf{Median}    &  xxx,xxx	\\ \hline
+\textbf{Std. Dev.} &  x.xx		\\ \hline
+\textbf{Min}       &  xxx,xxx	\\ \hline
+\textbf{Max}       &  x,xxx,xxx	\\ \hline
+\caption{Statistics of 100 runs}
+\label{results-table}
+\end{longtable}
+
+Some commentary on the results here
 
 \section{Conclusion}
 
-
-
-% Sample reference list for the various ways to reference.
-\begin{thebibliography}{12}
-\bibitem{pso-values-reference}
-Vandenbergh, F., \& Engelbrecht, A. (2006).
-\\A study of particle swarm optimization particle trajectories. Information Sciences, 176(8), 937-971. doi:10.1016/j.ins.2005.02.003
-\end{thebibliography}
+\printbibliography
 
 \end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
