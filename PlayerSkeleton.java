@@ -632,9 +632,9 @@ class PSO {
     private static int RANGE_POSITION = UPPERBOUND_POSITION - LOWERBOUND_POSITION;
 
     private static int NUM_FEATURES = PlayerSkeleton.NUM_FEATURES;
-    private static int NUM_PARTICLES = 16;  // general rule of thumb seems to be n < N < 2n, where n = numHeuristics
+    private static int NUM_PARTICLES = 220;  // general rule of thumb seems to be n < N < 2n, where n = numHeuristics
     static int NUM_GAMES = 3;
-    private static int NUM_ITERATIONS = 50;
+    private static int NUM_ITERATIONS = 1000;
     private static int NUM_THREADS = Runtime.getRuntime().availableProcessors();
 
     private boolean hasWeightsFromFile = false;
