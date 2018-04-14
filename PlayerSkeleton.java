@@ -11,7 +11,7 @@ public class PlayerSkeleton {
     static final int NUM_FEATURES = 8;
 
     // config booleans
-    private static boolean isTraining = false;
+    private static boolean isTraining = true;
     private static boolean isHeadless = false;
 
     private static String TRAINED_WEIGHTS = "trained_weights.txt";
