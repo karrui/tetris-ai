@@ -10,7 +10,7 @@ class MetaOptimization {
     private static int globalBestScore;
 
     // beta is represented arbitrarily with 0.5 here. We can change beta to see how it responds
-    private static double decreaseFactor = Math.pow(3.0, -1);
+    private static double decreaseFactor = Math.pow(2.0, -1.0/3);
 
     // parameters in PSO
     private static int swarm;
