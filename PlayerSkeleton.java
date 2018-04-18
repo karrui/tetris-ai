@@ -41,12 +41,12 @@ public class PlayerSkeleton {
                 e.printStackTrace();
             }
         }
-        features.add(new MaxHeightFeature());
+//        features.add(new MaxHeightFeature());
         features.add(new RowsClearedFeature());
-        features.add(new AvgHeightFeature());
+//        features.add(new AvgHeightFeature());
         features.add(new HolesFeature());
-        features.add(new ColumnTransitionsFeature());
         features.add(new AbsoluteDiffFeature());
+        features.add(new ColumnTransitionsFeature());
         features.add(new RowTransitionsFeature());
         features.add(new WellSumFeature());
 
@@ -103,7 +103,7 @@ public class PlayerSkeleton {
                     s.draw();
                     s.drawNext(0, 0);
                     try {
-                        Thread.sleep(1);
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
