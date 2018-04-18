@@ -10,7 +10,7 @@ class MetaOptimization {
     private static int globalBestScore;
 
     // beta is represented arbitrarily with 0.5 here. We can change beta to see how it responds
-    private static double decreaseFactor = Math.pow(2.0, -0.5);
+    private static double decreaseFactor = Math.pow(3.0, -1);
 
     // parameters in PSO
     private static int swarm;
@@ -72,16 +72,7 @@ class MetaOptimization {
                     * r.nextDouble();
 
             // add this to the current solution x to create the new potential solution
-            int swarmHere;
-            if (swarm + randomSwarm > 0) { // if the swarm size is still greater than 0
-                swarmHere = swarm + randomSwarm;
-            }
-            else {
-                // swarm will either decrement or increment within a range of 19
-                // the value 30 has been chosen such that for 10 iterations of meta-optimization,
-                // we have a low probability of getting swarm <= 0
-                swarmHere = swarm + (-19 + r.nextInt(39));
-            }
+            int swarmHere = Math.abs(swarm + randomSwarm);
             double inertiaHere = inertia + randomInertia;
             double socialParameterHere = socialParameter + randomSocialParameter;
             double cognitiveParameterHere = cognitiveParameter + randomCognitiveParameter;
