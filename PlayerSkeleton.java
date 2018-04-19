@@ -8,7 +8,7 @@ import java.util.concurrent.Future;
 
 public class PlayerSkeleton {
 
-    static final int NUM_FEATURES = 8;
+    static final int NUM_FEATURES = 9;
 
     // config booleans
     private static boolean isTraining = true;
@@ -49,6 +49,7 @@ public class PlayerSkeleton {
         features.add(new AbsoluteDiffFeature());
         features.add(new RowTransitionsFeature());
         features.add(new WellSumFeature());
+        features.add(new PlacementHeightFeature());
 
         // column features
 //        for (int i = 0; i < State.COLS; i++) {
@@ -196,6 +197,9 @@ class StateCopy {
     private static int[][][] pBottom;
     private static int[][][] pTop;
 
+    private int placementColumn;
+
+    private int currentOrientation;
 
     StateCopy(State toCopy) {
         this.lost = toCopy.hasLost();
@@ -237,6 +241,8 @@ class StateCopy {
                 for(int k = 0; k < COLS+1-pWidth[i][j];k++) {
                     legalMoves[i][n][ORIENT] = j;
                     legalMoves[i][n][SLOT] = k;
+                    placementColumn = n;
+                    currentOrientation = j;
                     n++;
                 }
             }
@@ -273,11 +279,26 @@ class StateCopy {
         return turn;
     }
 
+    int[][] getpHeight() {
+        return pHeight;
+    }
+    
     //gives legal moves for
     int[][] legalMoves() {
         return legalMoves[nextPiece];
     }
 
+    public int getNextPiece() {
+        return nextPiece;
+    }
+
+    public int getCurrentOrientation() {
+        return currentOrientation;
+    }
+
+    public int getPlacementColumn() {
+        return placementColumn;
+    }
     //make a move based on the move index - its order in the legalMoves futureList
     void makeMove(int move) {
         makeMove(legalMoves[nextPiece][move]);
@@ -614,6 +635,19 @@ class WellSumFeature implements Feature {
             }
         }
         return wellSum;
+    }
+}
+
+/**
+ * Returns the height of the column where the piece is placed
+ * The height is calculated after the piece is placed
+ */
+class PlacementHeightFeature implements Feature {
+    public double run(StateCopy s) {
+        int[] tops = s.getTop();
+        int[][] heights = s.getpHeight();
+        int placementHeight = tops[s.getPlacementColumn()] + heights[s.getNextPiece()][s.getCurrentOrientation()];
+        return placementHeight;
     }
 }
 
