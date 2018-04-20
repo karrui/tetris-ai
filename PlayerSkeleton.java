@@ -627,8 +627,8 @@ class PSO {
     private static int LOWERBOUND_VELOCITY = -5;
     private static int RANGE_VELOCITY = UPPERBOUND_VELOCITY - LOWERBOUND_VELOCITY;
 
-    private static int UPPERBOUND_POSITION = 10;
-    private static int LOWERBOUND_POSITION = -10;
+    private static int UPPERBOUND_POSITION = 20;
+    private static int LOWERBOUND_POSITION = -20;
     private static int RANGE_POSITION = UPPERBOUND_POSITION - LOWERBOUND_POSITION;
 
     private static int NUM_FEATURES = PlayerSkeleton.NUM_FEATURES;
