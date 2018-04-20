@@ -644,9 +644,9 @@ class WellSumFeature implements Feature {
  */
 class PlacementHeightFeature implements Feature {
     public double run(StateCopy s) {
-        int[] tops = s.getTop();
-        int[][] heights = s.getpHeight();
-        int placementHeight = tops[s.getPlacementColumn()] + heights[s.getNextPiece()][s.getCurrentOrientation()];
+        int[] tops = s.getTop(); 
+        int[][] pheights = s.getpHeight();
+        int placementHeight = tops[s.getPlacementColumn()]; //+ pheights[s.getNextPiece()][s.getCurrentOrientation()]; 
         return placementHeight;
     }
 }
