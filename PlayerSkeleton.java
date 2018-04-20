@@ -632,7 +632,7 @@ class PSO {
     private static int RANGE_POSITION = UPPERBOUND_POSITION - LOWERBOUND_POSITION;
 
     private static int NUM_FEATURES = PlayerSkeleton.NUM_FEATURES;
-    private static int NUM_PARTICLES = 16;  // general rule of thumb seems to be n < N < 2n, where n = numHeuristics
+    private static int NUM_PARTICLES = 161;  // general rule of thumb seems to be n < N < 2n, where n = numHeuristics
     static int NUM_GAMES = 3;
     private static int NUM_ITERATIONS = 1000;
     private static int NUM_THREADS = Runtime.getRuntime().availableProcessors();
@@ -850,9 +850,9 @@ class Particle {
 
     // Using values stated to be decent in
     // https://pdfs.semanticscholar.org/94b5/2262c526dbe38919d53b4c15c81130a12c3e.pdf
-    public static double INERTIA = 0.7298;
-    public static double COGNITIVE_PARAMETER = 1.49618;
-    public static double SOCIAL_PARAMETER = 1.49618;
+    public static double INERTIA = 0.6345602753864532;
+    public static double COGNITIVE_PARAMETER = 1.925758898746099;
+    public static double SOCIAL_PARAMETER = 2.642741397865409;
 
     private double[] position;
     private double[] velocity;

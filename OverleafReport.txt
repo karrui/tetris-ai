@@ -1,0 +1,206 @@
+% Use only LaTeX2e, calling the article.cls class and 12-point type.
+\documentclass[12pt]{article}
+\usepackage{amsmath} 
+\usepackage{amssymb}
+\numberwithin{table}{section}
+\numberwithin{figure}{section}
+\usepackage{floatrow}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{biblatex}
+\addbibresource{references.bib}
+
+\newcommand{\R}{\mathbb{R}}
+
+% The following parameters seem to provide a reasonable page setup.
+
+\topmargin 0.0cm
+\oddsidemargin 0.0cm
+\textwidth 16cm 
+\textheight 20cm
+\footskip 3.0cm
+
+% Include your paper's title here
+\title{\vspace{-4.5cm}AI Tetris - A CS3243 Project (Group 21)}
+\author{Lau Kar Rui (A0155936U), Tan Chee Wee (A0155400W), Poh Jie (A0158523A), Matilda (A0178867A)}
+
+
+% Start of document.
+\begin{document} 
+% 1.75 space the manuscript.
+\baselineskip17.5pt
+% Make the title.
+\maketitle 
+
+\section{Introduction}
+
+A utility-based Tetris-playing AI agent was created with utility weights derived through \emph{Particle Swarm Optimization} (PSO) to maximise the number of cleared rows in a game of Tetris. 
+	
+\section{Utility Function}\label{eq:util-fx}
+The best move is the move which maximizes the utility function, defined linear as
+	$$F(s) = \sum_{i = 1}^{n} w_if_i(s),$$
+with each feature $f_i \in Features$ assigned a weight $w_i$, where $i = 1...n$, $n$ = number of features. Each $f_i$ derives a real value from a game state $s$. 
+
+\section{Features Used} \label{sec:features}
+Table \ref{tab:features} describes the features $f_i$ used to calculate $w_i \in Weights$ when training the agent with the PSO algorithm described in Section \ref{sec:PSO}. 
+
+\begin{longtable}[c]{|p{4cm}|p{11.2cm}|}
+\hline
+\textbf{Feature}  & \textbf{Description} \\ \hline
+\textbf{RowsCleared }      & Number of rows cleared \\ \hline
+\textbf{MaxHeightIncrease} & Maximum height increase among all columns \\ \hline
+\textbf{AvgHeightIncrease} & Average height increase among all columns \\ \hline
+\textbf{AbsoluteDiff}      & Absolute height difference between all columns \\ \hline
+\textbf{NumHoles}          & Number of holes; a hole is defined as an empty cell with a non-empty cell above it \\ \hline
+\textbf{ColumnTransition}  & Number of column transitions; defined as empty cells adjacent to filled cells in the same column or vice versa \\ \hline
+\textbf{RowTransition}     & Number of row transitions; defined as empty cells adjacent to filled cells on the same row or vice versa \\ \hline
+\textbf{WellSum}           & Number of empty cells above each columns' top heights which are adjacent to filled cells on both sides \\ \hline
+\caption{Features used}
+\label{tab:features}
+\end{longtable}
+
+\section{Implementation}
+$F$ is applied on every possible next state $s_i$ using the \texttt{StateCopy} mechanism described in Section \ref{sec:statecopy}, and the state with the greatest value is chosen as the new current state.
+% * <matilds@live.se> 2018-04-17T04:39:06.452Z:
+% 
+% not necessary to describe what a state is, we've already brought up state earlier. but also we don't specifically say what weights and features are (I feel like no need)
+% 
+% ^.
+
+\subsection{StateCopy} \label{sec:statecopy}
+A \texttt{StateCopy} class was created as an extension of the original \texttt{State} class, serving as a state to apply $F$ on in order to derive the greatest feature value, allowing us to play moves without effecting the original state of the game.
+
+\subsection{Particle Swarm Optimization (PSO)} \label{sec:PSO}
+The PSO method is used with a population (a.k.a. swarm) of candidate solutions (a.k.a. particles), which moves around in the search-space of $F$, each particle guided by their individual best known position in the search-space as well as the whole swarm's best known position to find the best possible positions (a.k.a. $w_i \in Weights$) for $F(s)$.
+
+The movement of each particle is governed by two factors: \emph{velocity}, a variable, and \emph{inertia}, a constant. An \emph{inertia} of lower magnitude allows the swarm to converge faster to the optimal solution while the opposite encourages exploring the search-space. The \emph{velocity} of each particle is re-calculated every iteration, determined by its inerita, best know position of the individual particle and the swarm, and the swarm's willingness to move in the search-space.
+% * <matilds@live.se> 2018-04-17T04:48:42.039Z:
+% 
+% what was commented (by chee wee?):
+% %The movement of each particle $\vec{x}_i$ for $i=1...N$, where $N$ is the number of particles in the swarm, is guided by the formulae
+% \begin{gather*}
+% %\vec{v}\leftarrow \omega\vec{v} + \phi_p r_p ( \vec{p} - \vec{x} ) + \phi_g r_g ( \vec{g} - \vec{x} )
+% \\
+% %\vec{x}\leftarrow \vec{x} + \vec{v}
+% \end{gather*}
+% %where $\vec{p}$ is the particle's \emph{personal best position} and $\vec{g}$ is the swarm's \emph{global best position}, $\phi_p$ and $\phi_g$ being the \emph{social} and \emph{cognitive coefficient} respectively, emulating the swarm's willingness to move in the search-space. 
+% 
+% %$\phi_p$ acts as the particle's ``memory'', causing it to return to its individual best regions of the search space, while $\phi_g$ guides the particle to move to the localized search-space where the global best position was discovered. $r_p$ and $r_g$ are two random real values $\in\left[0..1\right]$ generated every assignment to $\vec{v}$. 
+% 
+% % $\omega$ refers to the \emph{inertia} of the particle, and keeps the particle moving in the same direction it was originally heading. A lower value speeds up convergence of the swarm in the search space, and a higher value encourages exploring the search-space.
+% 
+% %Values for these parameters were first chosen based on values stated in \cite{VanDenBergh2006ATrajectories} and later optimized with the Meta Optimization algorithm discussed in Section \ref{sec:meta-opt}.
+% 
+% 
+% 
+% ^.
+
+\subsection{Meta Optimization of PSO}\label{sec:meta-opt}
+While literature exists on finding the ideal parameters of PSO [1], these parameters generally do not have a specific problem in mind. Hence, we wanted to investigate if there exist ideal parameters for the TetrisAI problem. We turn to the Local Unimodal Sampling (LUS) algorithm [2] and its use in the Meta Optimization Problem [3]. The exact details of the LUS problem can be found in the appendix, but a brief intuition is as follows: we generate values for the 4 parameters (swarm size, inertia, cognitive and social parameters). We then run PSO using this set of parameter for 100 iterations. If the fitness value of PSO using this set of parameters is better than the best fitness value obtained so far, we do not reduce the search range for the parameters. Else we do. In both cases, we update the parameters.
+
+\section{Scaling PSO For Big Data: Parallel PSO}
+As PSO relies on discrete and encapsulated objects, which are the particles and each individual iteration of the game, it is feasible to efficiently scale the algorithm for Big Data via parallel computing. Performance of Parallel PSO (PPSO) can be highly dependent on the level of correlation between features and the nature of the communication strategy between parallel swarms, when running different groups on parallel processes.
+
+\begin{longtable}[c]{|l|l|}
+\hline
+                         			& \textbf{Time Taken for 20 iterations (in seconds)} \\ \hline
+\textbf{No multithreading}			&                                           \\ \hline
+\textbf{Multithreading particles} 	&                                           \\ \hline
+\textbf{Multithreading games} 		&                                           \\ \hline
+\caption{Time comparison}
+\label{tab:parallel-comparison}
+\end{longtable}
+
+\section{Training Results}\label{sec:weights}
+After 1000 iterations of training as described in Section \ref{sec:PSO}, we arrived at the weights:
+$$
+\left( \begin{array}{c} 
+MaxHeightIncrease
+\\RowsCleared
+\\AvgHeightIncrease
+\\NumHoles
+\\ColumnTransition
+\\AbsoluteDiff
+\\RowTransition
+\\WellSum
+\end{array} \right)
+\Longleftarrow\left( \begin{array}{c}
+-2.9210777318332948
+\\-1.3634453151532058
+\\-6.350233933389025
+\\-3.015076993292611
+\\-7.867411559467035
+\\-1.0057536655180186
+\\-1.6874510272386336
+\\-1.851236997094957
+\end{array} \right)
+$$
+\\
+Notice the weight for $RowsCleared$ being negative, meaning that $F$ to some extent minimizes the number of rows cleared instead of maximizing it. Since $AbsoluteDiff$'s value is smaller than $RowsCleared$'s, it seems to be more prioritized to aim for a smaller height overall rather than clearing a whole row,  regardless of no incentives in this version of the game for the training algorithm to save clearing rows for later (e.g. a score multiplier). 
+% * <matilds@live.se> 2018-04-17T14:51:38.948Z:
+% 
+% less height/smaller height ?? what word to use
+% 
+% ^.
+
+\section{Results}
+The results of 100 runs using the weights obtained in Section \ref{sec:weights} can be seen in Fig. \ref{fig:results}, and the statistical findings in Table \ref{tab:results}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.5]{placeholder-graph.png}
+    \caption{Graph of the results of 100 runs}
+    \label{fig:results}
+\end{figure}
+
+\begin{longtable}[c]{|l|l|}
+  \hline
+  \textbf{Mean}      &  xxx,xxx	\\ \hline
+  \textbf{Median}    &  xxx,xxx	\\ \hline
+  \textbf{Std. Dev.} &  x.xx		\\ \hline
+  \textbf{Min}       &  xxx,xxx	\\ \hline
+  \textbf{Max}       &  x,xxx,xxx	\\ \hline
+  \caption{Statistics of 100 runs}
+  \label{tab:results}
+\end{longtable}
+
+Some commentary on the results here
+
+\section{Conclusion}
+
+\section{Appendix}
+\subsection{Local Unimodal Sampling (LUS) algorithm}
+\begin{itemize}
+\item Initialise $\vec{x}$ to a random solution in the search space:
+\\
+\centerline{$\vec{x} \sim U(\vec{b_{lo}}, \vec{b_{up}})$}
+\\
+Where $\vec{b_{lo}}$ and $\vec{b_{up}}$ are the search-space boundaries.
+\item Set the initial sampling space $\vec{d}$ to cover the entire search-space:
+\\
+\centerline{$\vec{d} \leftarrow \vec{b_{up}} - \vec{b_{lo}}$}
+\item Until a termination criterion is met, repeat the following: 
+	\begin{itemize}
+	\item Pick a random vector $\vec{a} \sim U(-\vec{d}, \vec{d})$
+    \item Add this to the current solution $\vec{x}$, to create the new potential solution $\vec{y}$
+    \centerline {$\vec{y} = \vec{x} + \vec{a}$}
+    \item If $(f(\vec{y}) < f(\vec{x})$ then update the solution:
+    \\
+    \centerline{$ \vec{x} \leftarrow \vec{y}$}
+    \\
+    Otherwise decrease the search-range by multiplication with the factor $q$, defined as $2^{-\beta / n}$, where $\beta$ is arbitrarily defined and $n$ is the number of times the search-range has been reduced.
+    \\
+    \centerline{$\vec{d} \leftarrow q \cdot \vec{d}$}
+    \\
+    Note that $f:\R^n \rightarrow \R $ is the best fitness value of PSO algorithm using $\vec{x}$.
+	\end{itemize}
+\end{itemize}
+
+\section{Bibliography}
+\printbibliography
+1. Shi, Y.; Eberhart, R.C. (1998). "Parameter selection in particle swarm optimization". Proceedings of Evolutionary Programming VII (EP98). pp. 591–600.
+\\
+2. M.E.H. Pedersen and A.J. Chipperfield. Local unimodal sampling. Tech- nical Report HL0801, Hvass Laboratories, 2008.
+\\
+3. Pedersen, M.E.H.; Chipperfield, A.J. (2010). "Simplifying particle swarm optimization" (PDF). Applied Soft Computing. 10 (2): 618–628. doi:10.1016/j.asoc.2009.08.029.
+\end{document}
