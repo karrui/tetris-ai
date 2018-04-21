@@ -8,43 +8,53 @@
 \usepackage{longtable}
 \usepackage{graphicx}
 \usepackage{biblatex}
+\usepackage{booktabs}
+\usepackage{tabularx}
 \addbibresource{references.bib}
 
 \newcommand{\R}{\mathbb{R}}
 
+\usepackage[letterpaper, margin=2cm]{geometry}
 % The following parameters seem to provide a reasonable page setup.
 
-\topmargin 0.0cm
-\oddsidemargin 0.0cm
-\textwidth 16cm 
-\textheight 20cm
-\footskip 3.0cm
+% \topmargin 0.0cm
+% \oddsidemargin 0.0cm
+% \textwidth 16cm 
+% \textheight 20cm
+% \footskip 3.0cm
 
 % Include your paper's title here
-\title{\vspace{-4.5cm}AI Tetris - A CS3243 Project (Group 21)}
-\author{Lau Kar Rui (A0155936U), Tan Chee Wee (A0155400W), Poh Jie (A0158523A), Matilda (A0178867A)}
+\title{\vspace{-2em}AI Tetris - A CS3243 Project (Group 21)}
+\author{Lau Kar Rui (A0155936U), Tan Chee Wee (A0155400W), 
+\\Poh Jie (A0158523A), Matilda (A0178867A)}
+\date{}
 
 
 % Start of document.
 \begin{document} 
-% 1.75 space the manuscript.
-\baselineskip17.5pt
+% 1.5 space the manuscript.
+\baselineskip15.0pt
+% paragraph spacing
+\setlength{\parskip}{0.4em}
+\linespread{1.0}
 % Make the title.
 \maketitle 
 
 \section{Introduction}
 
-A utility-based Tetris-playing AI agent was created with utility weights derived through \emph{Particle Swarm Optimization} (PSO) to maximise the number of cleared rows in a game of Tetris. 
+We create an utility-based Tetris-playing AI agent with utility weights derived through \emph{Particle Swarm Optimization} (PSO) to maximise the number of cleared rows in a game of Tetris. 
+
+% if got space we explain what tetris is
 	
 \section{Utility Function}\label{eq:util-fx}
-The best move is the move which maximizes the utility function, defined linear as
+With every new piece, the agent determines the best possible state derivable from the piece and plays it, by simulating all possible states of the board the piece can reach (via its orientations and positions). The best state $s$ will have the highest utility function value $F(s)$, defined as
 	$$F(s) = \sum_{i = 1}^{n} w_if_i(s),$$
-with each feature $f_i \in Features$ assigned a weight $w_i$, where $i = 1...n$, $n$ = number of features. Each $f_i$ derives a real value from a game state $s$. 
+with each feature $f_i \in Features$ mapped to a weight $w_i$, where $i = 1...n$, $n$ = number of features. Each $f_i$ derives a real value from a game state $s$. 
 
 \section{Features Used} \label{sec:features}
 Table \ref{tab:features} describes the features $f_i$ used to calculate $w_i \in Weights$ when training the agent with the PSO algorithm described in Section \ref{sec:PSO}. 
 
-\begin{longtable}[c]{|p{4cm}|p{11.2cm}|}
+\begin{longtable}[c]{|p{4cm}|p{12.5cm}|}
 \hline
 \textbf{Feature}  & \textbf{Description} \\ \hline
 \textbf{RowsCleared }      & Number of rows cleared \\ \hline
@@ -60,55 +70,75 @@ Table \ref{tab:features} describes the features $f_i$ used to calculate $w_i \in
 \end{longtable}
 
 \section{Implementation}
-$F$ is applied on every possible next state $s_i$ using the \texttt{StateCopy} mechanism described in Section \ref{sec:statecopy}, and the state with the greatest value is chosen as the new current state.
+% $F$ is applied on every possible next state $s_i$ using the \texttt{StateCopy} mechanism described in Section \ref{sec:statecopy}, and the state with the greatest value is chosen as the new current state.
 % * <matilds@live.se> 2018-04-17T04:39:06.452Z:
 % 
 % not necessary to describe what a state is, we've already brought up state earlier. but also we don't specifically say what weights and features are (I feel like no need)
 % 
 % ^.
 
-\subsection{StateCopy} \label{sec:statecopy}
-A \texttt{StateCopy} class was created as an extension of the original \texttt{State} class, serving as a state to apply $F$ on in order to derive the greatest feature value, allowing us to play moves without effecting the original state of the game.
+% \subsection{StateCopy} \label{sec:statecopy}
+% A \texttt{StateCopy} class was created as an extension of the original \texttt{State} class, serving as a state to apply $F$ on in order to derive the greatest feature value, allowing us to play moves without affecting the original state of the game.
 
 \subsection{Particle Swarm Optimization (PSO)} \label{sec:PSO}
 The PSO method is used with a population (a.k.a. swarm) of candidate solutions (a.k.a. particles), which moves around in the search-space of $F$, each particle guided by their individual best known position in the search-space as well as the whole swarm's best known position to find the best possible positions (a.k.a. $w_i \in Weights$) for $F(s)$.
 
-The movement of each particle is governed by two factors: \emph{velocity}, a variable, and \emph{inertia}, a constant. An \emph{inertia} of lower magnitude allows the swarm to converge faster to the optimal solution while the opposite encourages exploring the search-space. The \emph{velocity} of each particle is re-calculated every iteration, determined by its inerita, best know position of the individual particle and the swarm, and the swarm's willingness to move in the search-space.
-% * <matilds@live.se> 2018-04-17T04:48:42.039Z:
-% 
-% what was commented (by chee wee?):
-% %The movement of each particle $\vec{x}_i$ for $i=1...N$, where $N$ is the number of particles in the swarm, is guided by the formulae
-% \begin{gather*}
-% %\vec{v}\leftarrow \omega\vec{v} + \phi_p r_p ( \vec{p} - \vec{x} ) + \phi_g r_g ( \vec{g} - \vec{x} )
-% \\
-% %\vec{x}\leftarrow \vec{x} + \vec{v}
-% \end{gather*}
-% %where $\vec{p}$ is the particle's \emph{personal best position} and $\vec{g}$ is the swarm's \emph{global best position}, $\phi_p$ and $\phi_g$ being the \emph{social} and \emph{cognitive coefficient} respectively, emulating the swarm's willingness to move in the search-space. 
-% 
-% %$\phi_p$ acts as the particle's ``memory'', causing it to return to its individual best regions of the search space, while $\phi_g$ guides the particle to move to the localized search-space where the global best position was discovered. $r_p$ and $r_g$ are two random real values $\in\left[0..1\right]$ generated every assignment to $\vec{v}$. 
-% 
-% % $\omega$ refers to the \emph{inertia} of the particle, and keeps the particle moving in the same direction it was originally heading. A lower value speeds up convergence of the swarm in the search space, and a higher value encourages exploring the search-space.
-% 
-% %Values for these parameters were first chosen based on values stated in \cite{VanDenBergh2006ATrajectories} and later optimized with the Meta Optimization algorithm discussed in Section \ref{sec:meta-opt}.
-% 
-% 
-% 
-% ^.
+The movement of each particle $\vec{x}$ is governed by the \emph{velocity} $\vec{v}$, which is derived from each particle $\vec{x}$'s \emph{personal best position} $\vec{p}$, and the \emph{swarm's best position} $\vec{g}$ through the formulae
+% think still should put this formula down, then appendix elaborate
+\begin{gather*}
+\vec{v}\leftarrow \omega\vec{v} + \phi_p r_p ( \vec{p} - \vec{x} ) + \phi_g r_g ( \vec{g} - \vec{x} )
+\\
+\vec{x}\leftarrow \vec{x} + \vec{v}
+\end{gather*}
+
+An \emph{inertia} $\omega$ of lower magnitude allows the swarm to converge faster to a solution (optimality not guaranteed) while the opposite encourages exploring the search-space. The \emph{velocity} of each particle is re-calculated after every iteration (where the Tetris game is played with $\vec{x}$ being the weights of the features) and serves as the swarm's willingness to move in the search-space.
+
+Values for the constants $\omega, \phi_p, \phi_g$ were first chosen based on values stated in \cite{VanDenBergh2006ATrajectories} and later optimized with the Meta Optimization algorithm discussed in Section \ref{sec:meta-opt}. Details of full algorithm is further elaborated on in Appendix \ref{app:pso}.
+
+% Karrui comments:
+% Some misconceptions here: the v-bar equation is basically:
+% velocity = inertia * previous velocity + cognitiveConstant*randomValue*(personalbestposition - currentposition) +
+% social constant*randomValue*(swarmbestposition - currentposition)
+% So this is more than 2 factors velocity and inertia, but many constant parameters, inertia, social+cognitive constant and the variables personalbestposition and swarmbestposition
+% This is also why PJ tried to do metaoptimization to see if there are better constant parameters than the one i chose because of another paper.
 
 \subsection{Meta Optimization of PSO}\label{sec:meta-opt}
-While literature exists on finding the ideal parameters of PSO [1], these parameters generally do not have a specific problem in mind. Hence, we wanted to investigate if there exist ideal parameters for the TetrisAI problem. We turn to the Local Unimodal Sampling (LUS) algorithm [2] and its use in the Meta Optimization Problem [3]. The exact details of the LUS problem can be found in the appendix, but a brief intuition is as follows: we generate values for the 4 parameters (swarm size, inertia, cognitive and social parameters). We then run PSO using this set of parameter for 100 iterations. If the fitness value of PSO using this set of parameters is better than the best fitness value obtained so far, we do not reduce the search range for the parameters. Else we do. In both cases, we update the parameters.
+While literature exists on finding the ideal parameters of PSO \cite{Shi1998ParameterOptimization}, these parameters generally do not have a specific problem in mind. Hence, we wanted to investigate if there exist ideal parameters for the TetrisAI problem. We turn to the Local Unimodal Sampling (LUS) algorithm \cite{ErikLocalSampling} and its use in the Meta Optimization (MO) Problem \cite{Pedersen2010SimplifyingOptimization}. The exact details of the LUS algorithm can be found in Appendix \ref{app:lus}, but a brief intuition is as follows: we generate values for the 4 parameters (swarm size, inertia, cognitive and social parameters). We then run PSO using this set of parameter for 100 iterations. If the fitness value of PSO using this set of parameters is better than the best fitness value obtained so far, we do not reduce the search range for the parameters. Else we do. In both cases, we update the parameters.
 
-\section{Scaling PSO For Big Data: Parallel PSO}
-As PSO relies on discrete and encapsulated objects, which are the particles and each individual iteration of the game, it is feasible to efficiently scale the algorithm for Big Data via parallel computing. Performance of Parallel PSO (PPSO) can be highly dependent on the level of correlation between features and the nature of the communication strategy between parallel swarms, when running different groups on parallel processes.
+We ran 10 iterations of the MO problem, with each iteration consisting of 100 PSO iterations. We decide to use the best weights we have learned so far as we were stuck at around 1.4 million for our PSO algorithm and we wanted to see if we can get better results using other parameters.
+
+We picked the 5 best sets of parameters (\ref{app:par}) from MO to compare with 5 sets of the parameters from \cite{VanDenBergh2006ATrajectories}. We ran 10 sets of PSO, up to 1000 iterations, and compare the performance of the parameters from the MO problem against a decent set of parameters \cite{VanDenBergh2006ATrajectories}. For convenience sake, we refer to the parameters gotten from MO as MO1, MO2, etc, in the order they are displayed in Appendix 3. Similarly, we shall refer to the parameters suggested \cite{VanDenBergh2006ATrajectories} as Suggested.
+
+To avoid outliers skewing the data, we decide to take the 20\% trimmed mean of the performance of Suggested for each 50 iterations. We also plot the performance of the PSO run using MO parameters for every 50 iterations.
+
+From Table something, we can see that the PSO run using MO1 as its parameters performed the best, while other MO parameters did not fare as well. To ensure that this successful performance by MO1 is not due to luck, we decide to repeat runs of PSO with MO1 two more times.
+% should I do a scatter plot here?
+From Table something, we can see that the three runs of bla bla
+
+Hence, we can see that the MO1 parameters are much better for finding the optimal weights for PSO. We further suggest that for this particular problem, the MO1 parameters can also be further refined by running the LSU algorithm starting with this set of parameters.
+% PJ to do:
+% Plot 20 percent trimmed mean of each 5 run (table or scatter plot) - use R to do this
+% Conclude which is better
+
+\section{Scaling PSO For Big Data: Parallel Swarms Oriented PSO(PSO-PSO)}
+As PSO relies on discrete and encapsulated objects, which are the particles and each individual iteration of the game, it is feasible to efficiently scale the algorithm for Big Data via parallel computing\cite{Gonsalves2013ParallelOptimization}. At initialization, a predetermined number of sub-swarms are randomly generated and spread out to uniformly cover the search-space. 
+\subsection{Multi-evolutionary phase}
+The sub-swarms are allowed to evolve independently over a specified number of iterations, at the end of which the particle best-known-position (\emph{pBest}) and the swarm best-known-position (\emph{sBest}) is found. Each CPU core is
+dedicated to the evolution of a single sub-swarm in the multi-stage
+computational phase of the algorithm.
+\subsection{Single-evolutionary phase}
+The global best-known-position (\emph{gBest}) is computed using the max/min of all sub-swarms' \emph{sBest}. Each individual swarms will update the velocity and position of each particle using the \emph{gBest} as reference.\\
+
+This process of alternating between the phases is repeated infinitely or until the agent loses. 
 
 \begin{longtable}[c]{|l|l|}
-\hline
-                         			& \textbf{Time Taken for 20 iterations (in seconds)} \\ \hline
-\textbf{No multithreading}			&                                           \\ \hline
-\textbf{Multithreading particles} 	&                                           \\ \hline
-\textbf{Multithreading games} 		&                                           \\ \hline
-\caption{Time comparison}
-\label{tab:parallel-comparison}
+%\hline
+%                         			& \textbf{Time Taken for 20 iterations %(in seconds)} \\ \hline
+%\textbf{No multithreading}			&                                           \\ \hline
+%\textbf{Multithreading particles} 	&                                           \\ \hline
+%\textbf{Multithreading games} 		&                                           \\ \hline
+%\caption{Time comparison}
+%\label{tab:parallel-comparison}
 \end{longtable}
 
 \section{Training Results}\label{sec:weights}
@@ -141,7 +171,7 @@ Notice the weight for $RowsCleared$ being negative, meaning that $F$ to some ext
 % 
 % less height/smaller height ?? what word to use
 % 
-% ^.
+% ^ <matilds@live.se> 2018-04-19T04:55:29.200Z.
 
 \section{Results}
 The results of 100 runs using the weights obtained in Section \ref{sec:weights} can be seen in Fig. \ref{fig:results}, and the statistical findings in Table \ref{tab:results}.
@@ -153,23 +183,39 @@ The results of 100 runs using the weights obtained in Section \ref{sec:weights} 
     \label{fig:results}
 \end{figure}
 
-\begin{longtable}[c]{|l|l|}
-  \hline
-  \textbf{Mean}      &  xxx,xxx	\\ \hline
-  \textbf{Median}    &  xxx,xxx	\\ \hline
-  \textbf{Std. Dev.} &  x.xx		\\ \hline
-  \textbf{Min}       &  xxx,xxx	\\ \hline
-  \textbf{Max}       &  x,xxx,xxx	\\ \hline
-  \caption{Statistics of 100 runs}
+\begin{table}[H]
+\centering
+\caption{Statistics of 100 runs}
   \label{tab:results}
-\end{longtable}
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+{\textbf{Games Played}} & {\textbf{Mean}} & {\textbf{Median}} & {\textbf{Std. Dev.}} & {\textbf{Min}} & {\textbf{Max}} 	\\ \hline
+100 & xxx,xxx & xxx,xxx & xxx & xxx,xxx & x,xxx,xxx		\\ \hline
+\end{tabular}
+\end{table}
+
 
 Some commentary on the results here
 
 \section{Conclusion}
 
+\newpage
+\appendix
 \section{Appendix}
-\subsection{Local Unimodal Sampling (LUS) algorithm}
+\subsection{Particle Swarm Optimization (PSO) algorithm}\label{app:pso}
+The movement of each particle $\vec{x}_i$ for $i=1...N$, where $N$ is the number of particles in the swarm, is guided by the formulae
+\begin{gather*}
+\vec{v}\leftarrow \omega\vec{v} + \phi_p r_p ( \vec{p} - \vec{x} ) + \phi_g r_g ( \vec{g} - \vec{x} )
+\\
+\vec{x}\leftarrow \vec{x} + \vec{v}
+\end{gather*}
+where $\vec{p}$ is the particle's \emph{personal best position} and $\vec{g}$ is the swarm's \emph{global best position}, $\phi_p$ and $\phi_g$ being the \emph{social} and \emph{cognitive coefficient} respectively, emulating the swarm's willingness to move in the search-space. 
+
+$\phi_p$ acts as the particle's ``memory'', causing it to return to its individual best regions of the search space, while $\phi_g$ guides the particle to move to the localized search-space where the global best position was discovered. $r_p$ and $r_g$ are two random real values $\in\left[0..1\right]$ generated every assignment to $\vec{v}$. 
+
+$\omega$ refers to the \emph{inertia} of the particle, and keeps the particle moving in the same direction it was originally heading. A lower value speeds up convergence of the swarm in the search space, and a higher value encourages exploring the search-space.
+
+\subsection{Local Unimodal Sampling (LUS) algorithm}\label{app:lus}
 \begin{itemize}
 \item Initialise $\vec{x}$ to a random solution in the search space:
 \\
@@ -196,11 +242,36 @@ Where $\vec{b_{lo}}$ and $\vec{b_{up}}$ are the search-space boundaries.
 	\end{itemize}
 \end{itemize}
 
-\section{Bibliography}
+\subsection{Parameters from Meta Optimization}
+\centering
+\begin{figure}
+\includegraphics[scale = 0.7]{MOParameters.png}
+\caption{Parameters information}
+\label{tab:parametersInfo}
+\end{figure}
+
+\newpage
 \printbibliography
-1. Shi, Y.; Eberhart, R.C. (1998). "Parameter selection in particle swarm optimization". Proceedings of Evolutionary Programming VII (EP98). pp. 591–600.
-\\
-2. M.E.H. Pedersen and A.J. Chipperfield. Local unimodal sampling. Tech- nical Report HL0801, Hvass Laboratories, 2008.
-\\
-3. Pedersen, M.E.H.; Chipperfield, A.J. (2010). "Simplifying particle swarm optimization" (PDF). Applied Soft Computing. 10 (2): 618–628. doi:10.1016/j.asoc.2009.08.029.
+
 \end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
