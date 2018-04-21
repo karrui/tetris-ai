@@ -32,7 +32,7 @@ public class PlayerSkeleton {
     // beta is represented arbitrarily with 1/3 here. We can change beta to see how it responds
     private static double decreaseFactor = Math.pow(2.0, -1.0/3);
 
-    // parameters in PSO, we initialise here for metaoptimization
+    // parameters in PSO, we initialise here for Meta Optimization
     private static int swarm;
     private static double inertia;
     private static double socialParameter;
@@ -64,11 +64,6 @@ public class PlayerSkeleton {
         features.add(new AbsoluteDiffFeature());
         features.add(new RowTransitionsFeature());
         features.add(new WellSumFeature());
-
-        // column features
-//        for (int i = 0; i < State.COLS; i++) {
-//            features.add(new ColumnHeuristic());
-//        }
     }
 
 
@@ -153,10 +148,10 @@ public class PlayerSkeleton {
         // initialise x to a random solution in the search space.
         // more specifically, we initialise parameters in PSO, namely swarm size, inertia, social and cognitive parameters
 
-        // swarm \in [0, 200]
+        // swarm in [0, 200]
         swarm = r.nextInt(199) + 1;
         // for generating double values within a range: randomValue = rangeMin + (rangeMax - rangeMin) * r.nextDouble()
-        // inertia \in [-2, 2]
+        // inertia in [-2, 2]
         inertia = -2.0 + 4.0 * r.nextDouble();
         // social and cognitive parameters both in [-4, 4]
         socialParameter = -4.0 + 8.0 * r.nextDouble();
