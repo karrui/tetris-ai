@@ -11,36 +11,27 @@ public class PlayerSkeleton {
     static final int NUM_FEATURES = 8;
 
     // config booleans
-    private static boolean isTraining = true;
+    private static boolean isTraining = false;
     private static boolean isHeadless = false;
 
-    private static String TRAINED_WEIGHTS = "trained_weights.txt";
+//    private static String TRAINED_WEIGHTS = "trained_weights.txt";
 
     
     private ArrayList<Feature> features = new ArrayList<>();
 
-    // update these weights, negative for minimize, positive for maximize.
-    // Probably doesn't matter since machine will slowly move it to the correct value
-    private double[] weights;
+    // weights for each feature
+    private double[] weights = {-5.194814083947793,
+                                5.53478180043909,
+                                -2.1920993360428604,
+                                -5.9838083427614395,
+                                -12.880189747449215,
+                                -1.3227027198368309,
+                                -3.7823922425956837,
+                                -2.2176395274310137};
 
 
+    // Constructor, add features
     PlayerSkeleton() {
-        weights = new double[NUM_FEATURES];
-
-        if (!isTraining) {
-            // read in the trained weights into our weights array
-            try {
-                BufferedReader bufferedReader = new BufferedReader(new FileReader(TRAINED_WEIGHTS));
-                String line;
-                int i = 0;
-                while ((line = bufferedReader.readLine()) != null) {
-                    weights[i++] = Double.parseDouble(line);
-                }
-                bufferedReader.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
         features.add(new MaxHeightFeature());
         features.add(new RowsClearedFeature());
         features.add(new AvgHeightFeature());
@@ -49,15 +40,11 @@ public class PlayerSkeleton {
         features.add(new AbsoluteDiffFeature());
         features.add(new RowTransitionsFeature());
         features.add(new WellSumFeature());
-
-        // column features
-//        for (int i = 0; i < State.COLS; i++) {
-//            features.add(new ColumnHeuristic());
-//        }
     }
 
 
     //implement this function to have a working system
+    // The best move is chosen if the state s has the highest utility
     private int pickMove(State s, int[][] legalMoves) {
         int bestMove = 0;
         double maxUtility = Integer.MIN_VALUE;
@@ -78,7 +65,8 @@ public class PlayerSkeleton {
         return bestMove;
     }
 
-
+    // Our main utility function F(s)
+    // Returns the utility of the State s
     private double valueFunction(StateCopy s) {
         double value = 0;
         int i = 0;
@@ -117,7 +105,8 @@ public class PlayerSkeleton {
         }
     }
 
-    // training method, feels recursive as hell
+    // training method for our swarm particles
+    // Returns rows cleared by using particle's position as weights for utility function
     static int train(State s, PlayerSkeleton p) {
         while(!s.hasLost()) {
             s.makeMove(p.pickMove(s, s.legalMoves()));
@@ -134,6 +123,7 @@ public class PlayerSkeleton {
         ps.execute();
     }
 
+    // update the current weights of the PlayerSkeleton to the Particle's positions
     void updateWeights(double[] newWeights) {
         weights = ArrayHelper.deepCopy(newWeights);
     }
@@ -623,18 +613,27 @@ class WellSumFeature implements Feature {
  * =============================================================================================================
  */
 class PSO {
+    // Bounds the velocity of the Particles in the swarm
     private static int UPPERBOUND_VELOCITY = 5;
     private static int LOWERBOUND_VELOCITY = -5;
     private static int RANGE_VELOCITY = UPPERBOUND_VELOCITY - LOWERBOUND_VELOCITY;
 
+    // Bounds the search space of the swarm
+    // Sidenote: Might have been a bad idea to limit it to just +-10, should have made it bigger
     private static int UPPERBOUND_POSITION = 10;
     private static int LOWERBOUND_POSITION = -10;
     private static int RANGE_POSITION = UPPERBOUND_POSITION - LOWERBOUND_POSITION;
 
     private static int NUM_FEATURES = PlayerSkeleton.NUM_FEATURES;
-    private static int NUM_PARTICLES = 16;  // general rule of thumb seems to be n < N < 2n, where n = numHeuristics
+    private static int NUM_PARTICLES = 161;  // obtained from Meta Optimization
+
+    // Make each particle play NUM_GAMES games to get average score
     static int NUM_GAMES = 3;
+
+    // Number of iterations each particle moves
     private static int NUM_ITERATIONS = 1000;
+
+    // Maximize number of threads to use for parallelization
     private static int NUM_THREADS = Runtime.getRuntime().availableProcessors();
 
     private boolean hasWeightsFromFile = false;
@@ -662,6 +661,8 @@ class PSO {
         createSwarm();
     }
 
+
+    // Initiate the swarm by creating random positions and velocities
     private void createSwarm() {
         Random random = new Random();
         particles = new Particle[NUM_PARTICLES];
@@ -693,13 +694,18 @@ class PSO {
 
             int k = 0;
             for (Particle particle : particles) {
+                // retrieve score from Futures
                 int score = scoreForAll[k++];
                 particle.updatePersonalBest(score);
+
+                // Update global best score and positions if particle scored higher
                 if (score > globalBest) {
                     globalBest = score;
                     globalBestPositions = ArrayHelper.deepCopy(particle.getPosition());
                     writeBestWeightsToFile();
                 }
+
+                // Get ready for next iteration
                 particle.updateVelocity(globalBestPositions, UPPERBOUND_VELOCITY, LOWERBOUND_VELOCITY);
                 particle.updatePosition(UPPERBOUND_POSITION, LOWERBOUND_POSITION);
             }
@@ -825,12 +831,10 @@ class CallableTrainer implements Callable<Integer> {
  * Particle for the {@link PSO} class
  */
 class Particle {
-
-    // Using values stated to be decent in
-    // https://pdfs.semanticscholar.org/94b5/2262c526dbe38919d53b4c15c81130a12c3e.pdf
-    private static double INERTIA = 0.7298;
-    private static double COGNITIVE_PARAMETER = 1.49618;
-    private static double SOCIAL_PARAMETER = 1.49618;
+    // Using values obtained from Meta Optimization
+    public static double INERTIA = 0.6345602753864532;
+    public static double COGNITIVE_PARAMETER = 1.925758898746099;
+    public static double SOCIAL_PARAMETER = 2.642741397865409;
 
     private double[] position;
     private double[] velocity;
